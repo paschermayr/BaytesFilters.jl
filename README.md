@@ -14,6 +14,7 @@
 BaytesFilters.jl is a library to perform particle filtering for one parameter in a `ModelWrapper` struct, see [ModelWrappers.jl](https://github.com/paschermayr/ModelWrappers.jl).
 
 ## Introduction
+
 Let us start with creating a univariate normal Mixture model with two states via [ModelWrappers.jl](https://github.com/paschermayr/ModelWrappers.jl):
 ```julia
 using ModelWrappers, BaytesFilters
