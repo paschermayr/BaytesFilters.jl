@@ -11,11 +11,9 @@
 [![Coverage](https://codecov.io/gh/paschermayr/BaytesFilters.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/paschermayr/BaytesFilters.jl)
 [![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
 
-
 BaytesFilters.jl is a library to perform particle filtering for one parameter in a `ModelWrapper` struct, see [ModelWrappers.jl](https://github.com/paschermayr/ModelWrappers.jl).
 
 ## Introduction
-
 Let us start with creating a univariate normal Mixture model with two states via [ModelWrappers.jl](https://github.com/paschermayr/ModelWrappers.jl):
 ```julia
 using ModelWrappers, BaytesFilters
