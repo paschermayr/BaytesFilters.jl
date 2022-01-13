@@ -1,0 +1,49 @@
+############################################################################################
+"""
+$(SIGNATURES)
+Contains information about log-likelihood, expected sample size and proposal trajectory.
+
+# Examples
+```julia
+```
+
+"""
+struct ParticleDiagnostics{D} <: AbstractDiagnostics
+    "Log likelihood approximation."
+    ℓℒ::Float64
+    "Log likelihood approximation at current iteration."
+    ℓℒₜ::Float64
+    "Number of particles used in proposal steps."
+    Nparticles::Int64
+    "Average number of resampling steps."
+    resampled::Float64
+    "Prediction of latent and observed variable after last proposal step."
+    prediction::D
+    function ParticleDiagnostics(
+        ℓℒ::Float64, ℓℒₜ::Float64, Nparticles::Int64, resampled::Float64, prediction::D
+    ) where {D}
+        return new{D}(ℓℒ, ℓℒₜ, Nparticles, resampled, prediction)
+    end
+end
+
+############################################################################################
+"""
+$(SIGNATURES)
+Show relevant diagnostic results.
+
+# Examples
+```julia
+```
+
+"""
+function generate_showvalues(diagnostics::D) where {D<:ParticleDiagnostics}
+    return function showvalues()
+        return (:pf, "diagnostics"),
+        (:loglik_estimate, diagnostics.ℓℒ), (:Nparticles, diagnostics.Nparticles),
+        (:resampled, diagnostics.resampled)
+    end
+end
+
+############################################################################################
+#export
+export ParticleDiagnostics, generate_showvalues
