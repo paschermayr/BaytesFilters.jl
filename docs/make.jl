@@ -15,10 +15,11 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
+        "Introduction" => "intro.md",
     ],
 )
 
 deploydocs(;
     repo="github.com/paschermayr/BaytesFilters.jl",
-    devbranch="master",
+    devbranch="main",
 )
