@@ -34,15 +34,8 @@ struct ParticleWeights
 end
 
 ############################################################################################
-"""
-$(SIGNATURES)
-Returns log weights and normalized log weights at time > 1.
-
-# Examples
-```julia
-```
-
-"""
+#!NOTE: Cannot document functor
+# Returns log weights and normalized log weights at time > 1.
 function (weights::ParticleWeights)(ℓevidenceₜ::AbstractVector{T}) where {T<:Real}
     weights.ℓweights .= ℓevidenceₜ #Incremental weight
     normalize!(weights)
