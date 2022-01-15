@@ -2,7 +2,6 @@
 #Import
 include("memory.jl")
 include("diagnostics.jl")
-include("particles.jl")
 include("tune.jl")
 
 ############################################################################################

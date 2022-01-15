@@ -8,7 +8,7 @@ Default arguments for Particle Filter constructor.
 $(TYPEDFIELDS)
 """
 struct ParticleFilterDefault{
-    A<:ParticleWeighting,B<:ParticleResampling,C<:ParticleReferencing
+    A<:BaytesCore.ParameterWeighting,B<:BaytesCore.ResamplingMethod,C<:ParticleReferencing
 }
     "Weighting Methods for particles."
     weighting::A
@@ -93,7 +93,7 @@ function ParticleFilter(
         resampling,
         referencing,
         ParticleFilterConfig(data, reference),
-        ParticlesTune(coverage, threshold, Nparticles, Ndata),
+        BaytesCore.ChainsTune(coverage, threshold, Nparticles, Ndata),
         memory,
         Iterator(1),
     )
@@ -138,16 +138,16 @@ function propose(
     ## Propagate particles forward
     propagate!(_rng, pf.particles, pf.tune, reference, objective)
     ## Sort all particles back into correct order
-    shuffle_backward!(pf.particles, pf.tune)
+    BaytesCore.shuffle_backward!(pf.particles, pf.tune)
     ## Draw proposal path, update proposal with corresponding path and predict future state
-    path = draw!(_rng, pf.particles.weights) #pf.particles, pf.tune)
+    path = BaytesCore.draw!(_rng, pf.particles.weights) #pf.particles, pf.tune)
     #	assign!(pf.particles.buffer.proposal, pf.particles.val[path], pf.tune.iter.current-1)
     prediction = predict(_rng, pf.particles, pf.tune, reference, path)
     ## Create Diagnostics and return output
-    diagnostics = ParticleDiagnostics(
+    diagnostics = ParticleFilterDiagnostics(
         pf.particles.ℓℒ.cumulative,
         pf.particles.ℓℒ.current,
-        pf.tune.particles.Nparticles,
+        pf.tune.chains.Nchains,
         mean(pf.particles.buffer.resampled),
         prediction,
     )
@@ -204,7 +204,7 @@ function propose!(
             update_Ndata,
             dynamics(objective),
             reference,
-            pf.tune.particles.Nparticles,
+            pf.tune.chains.Nchains,
             Ndata,
         )
     end
@@ -250,17 +250,17 @@ function propagate!(
         pf.particles.val[end, iter] = reference[iter]
     end
     ## Update maximal number of iterations and resize particles
-    pf.tune.particles.Ndata = maximum(size(objective.data))
-    resize!(pf.particles.val, pf.tune.particles.Nparticles, pf.tune.particles.Ndata)
-    update!(pf.particles.buffer, pf.tune.particles.Nparticles, pf.tune.particles.Ndata)
+    pf.tune.chains.Ndata = maximum(size(objective.data))
+    resize!(pf.particles.val, pf.tune.chains.Nchains, pf.tune.chains.Ndata)
+    update!(pf.particles.buffer, pf.tune.chains.Nchains, pf.tune.chains.Ndata)
     ## Assign temporary variables so visible outside of data loop
     path = size(pf.particles.val, 1)
     ## Iterate through new data
-    for iter in (pf.tune.iter.current):(pf.tune.particles.Ndata)
+    for iter in (pf.tune.iter.current):(pf.tune.chains.Ndata)
         ## Resample particle ancestors if resampling criterion fullfiled
-        if resample_maybe(
-            computeESS(pf.particles.weights),
-            pf.tune.particles.Nparticles * pf.tune.particles.threshold,
+        if BaytesCore.islarger(
+            BaytesCore.computeESS(pf.particles.weights),
+            pf.tune.chains.Nchains * pf.tune.chains.threshold,
         )
             ## Resample ancestors
             ancestors!(_rng, pf.particles, pf.tune, pf.particles.buffer.ancestor)
@@ -271,10 +271,10 @@ function propagate!(
             pf.particles.buffer.resampled[iter] = true
             ## Equal weight normalized weights for next iteration memory
             Base.fill!(
-                pf.particles.weights.ℓweightsₙ, log(1.0 / pf.tune.particles.Nparticles)
+                pf.particles.weights.ℓweightsₙ, log(1.0 / pf.tune.chains.Nchains)
             )
-            ## Shuffle all trajectories according to current resampled index
-            shuffle!(pf.particles)
+            ## BaytesCore.shuffle all trajectories according to current resampled index
+            BaytesCore.shuffle!(pf.particles)
         else
             pf.particles.buffer.resampled[iter] = false
         end
@@ -308,10 +308,10 @@ function propagate!(
     ## Predict new state and observation
     prediction = predict(_rng, pf.particles, pf.tune, reference, path)
     ## Create Diagnostics and return output
-    diagnostics = ParticleDiagnostics(
+    diagnostics = ParticleFilterDiagnostics(
         pf.particles.ℓℒ.cumulative,
         pf.particles.ℓℒ.current,
-        pf.tune.particles.Nparticles,
+        pf.tune.chains.Nchains,
         mean(pf.particles.buffer.resampled),
         prediction,
     )

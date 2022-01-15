@@ -2,7 +2,7 @@
 # Models to be used in construction
 objectives = [deepcopy(markov_objective), deepcopy(semimarkov_objective)]
 
-resamplemethods = [Systematic(), Residual(), Stratified(), Simple()]
+resamplemethods = [Systematic(), Residual(), Stratified(), BaytesFilters.Multinomial()]
 referencemethods = [Conditional(), Ancestral(), Marginal()]
 
 ## Make model

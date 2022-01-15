@@ -38,7 +38,7 @@ Inplace calculate ancestor weights.
 
 """
 function ancestralweight!(
-    weights::ParticleWeights,
+    weights::BaytesCore.ParameterWeights,
     valₜ::Union{P,AbstractArray{P}},
     kernel::ParticleKernel,
     val::AbstractArray,
@@ -63,7 +63,7 @@ Sample ancestor reference for particle history.
 """
 function sample_ancestor(
     _rng::Random.AbstractRNG,
-    weights::ParticleWeights,
+    weights::BaytesCore.ParameterWeights,
     valₜ::Union{P,AbstractArray{P}},
     kernel::ParticleKernel,
     val::AbstractArray,
@@ -73,7 +73,7 @@ function sample_ancestor(
     ancestralweight!(weights, valₜ, kernel, val, iter)
     #!NOTE Need to exp() particles.weights.buffer due to ancestralweights! calculation in log space
     weights.buffer .= exp.(weights.buffer)
-    return randcat(_rng, weights.buffer)
+    return BaytesCore.randcat(_rng, weights.buffer)
 end
 
 ############################################################################################
@@ -94,8 +94,8 @@ function ancestors!(
     iter::Integer,
     Nparticles::Integer,
     weights::AbstractVector{F},
-) where {R<:ParticleResampling,F<:AbstractFloat}
-    #!NOTE: Weights.buffer already exp.(weightsₙ) during resample_maybe( computeESS(particles.weights), X) in previous step
+) where {R<:BaytesCore.ResamplingMethod,F<:AbstractFloat}
+    #!NOTE: Weights.buffer already exp.(weightsₙ) during BaytesCore.islarger( BaytesCore.computeESS(particles.weights), X) in previous step
     resample!(
         _rng,
         resampling,
@@ -153,7 +153,7 @@ function get_reference!(
     _rng::Random.AbstractRNG,
     referencing::Marginal,
     ancestor::AbstractVector{I},
-    weights::ParticleWeights,
+    weights::BaytesCore.ParameterWeights,
     referenceₜ::Union{P,AbstractArray{P}},
     kernel::ParticleKernel,
     val::AbstractArray,
@@ -165,7 +165,7 @@ function get_reference!(
     _rng::Random.AbstractRNG,
     referencing::Conditional,
     ancestor::AbstractVector{I},
-    weights::ParticleWeights,
+    weights::BaytesCore.ParameterWeights,
     referenceₜ::Union{P,AbstractArray{P}},
     kernel::ParticleKernel,
     val::AbstractArray,
@@ -178,13 +178,13 @@ function get_reference!(
     _rng::Random.AbstractRNG,
     referencing::Ancestral,
     ancestor::AbstractVector{I},
-    weights::ParticleWeights,
+    weights::BaytesCore.ParameterWeights,
     referenceₜ::Union{P,AbstractArray{P}},
     kernel::ParticleKernel,
     val::AbstractArray,
     iter::Integer,
 ) where {I<:Integer,P}
-    #!NOTE: Weights.buffer already exp.(weightsₙ) during resample_maybe( computeESS(particles.weights), X) in previous step
+    #!NOTE: Weights.buffer already exp.(weightsₙ) during BaytesCore.islarger( BaytesCore.computeESS(particles.weights), X) in previous step
     ancestor[end] = sample_ancestor(_rng, weights, referenceₜ, kernel, val, iter)
     return nothing
 end
@@ -193,7 +193,7 @@ function get_reference!(
     _rng::Random.AbstractRNG,
     referencing,
     ancestor::AbstractMatrix{I},
-    weights::ParticleWeights,
+    weights::BaytesCore.ParameterWeights,
     referenceₜ::Union{P,AbstractArray{P}},
     kernel::ParticleKernel,
     val::AbstractArray,
@@ -213,5 +213,11 @@ end
 
 ############################################################################################
 #export
-export Marginal,
-    Conditional, Ancestral, get_reference, get_reference!, set_reference!, sample_ancestor
+export
+    Marginal,
+    Conditional,
+    Ancestral,
+    get_reference,
+    get_reference!,
+    set_reference!,
+    sample_ancestor

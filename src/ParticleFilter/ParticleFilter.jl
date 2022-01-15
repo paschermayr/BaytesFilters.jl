@@ -8,18 +8,6 @@ abstract type ParticleKernel <: AbstractKernel end
 
 """
 $(TYPEDEF)
-Super type for various particle weighting techniques.
-"""
-abstract type ParticleWeighting end
-
-"""
-$(TYPEDEF)
-Super type for various particle resampling techniques.
-"""
-abstract type ParticleResampling end
-
-"""
-$(TYPEDEF)
 Super type for various particle referencing techniques.
 """
 abstract type ParticleReferencing end
@@ -40,6 +28,4 @@ export update!,
     propagate!,
     predict,
     ParticleKernel,
-    ParticleWeighting,
-    ParticleResampling,
     ParticleReferencing

@@ -50,7 +50,7 @@ function infer(
     model::ModelWrapper,
     data::D,
 ) where {D}
-    return ParticleDiagnostics{infer(_rng, pf, model, data)}
+    return ParticleFilterDiagnostics{infer(_rng, pf, model, data)}
 end
 
 """
@@ -86,7 +86,7 @@ function results(
     pf::ParticleFilter,
     Ndigits::Integer,
     quantiles::Vector{T},
-) where {T<:Real,P<:ParticleDiagnostics}
+) where {T<:Real,P<:ParticleFilterDiagnostics}
     ## Print Trace
     println(
         "### ",
@@ -132,7 +132,7 @@ function get_loglik(pf::ParticleFilter)
     return pf.particles.ℓℒ.cumulative
 end
 
-function get_prediction(diagnostics::ParticleDiagnostics)
+function get_prediction(diagnostics::ParticleFilterDiagnostics)
     return diagnostics.prediction
 end
 

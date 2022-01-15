@@ -22,7 +22,14 @@ import BaytesCore:
     get_prediction,
     get_phase,
     get_iteration,
-    generate_showvalues
+    generate_showvalues,
+    ParameterWeighting,
+    ResamplingMethod,
+    resample!,
+    weight!,
+    shuffle!,
+    shuffle_forward!,
+    shuffle_backward!
 
 using BaytesCore:
     BaytesCore,
@@ -41,6 +48,7 @@ using BaytesCore:
     logsumexp,
     logaddexp,
     logmeanexp,
+    islarger,
     grab,
     ArrayConfig,
     to_NamedTuple,
@@ -48,14 +56,21 @@ using BaytesCore:
     TemperingTune,
     TemperingParameter,
     update,
-    checktemperature
+    checktemperature,
+    ParameterWeights,
+    draw!,
+    normalize!,
+    computeESS,
+    randcat,
+    ChainsTune
 
 import ModelWrappers: ModelWrappers, predict
 using ModelWrappers:
     ModelWrappers, ModelWrapper, Tagged, Objective, DiffObjective, ℓObjectiveResult
 
 import Base: max, push!, resize!
-import Random: Random, shuffle!, rand!
+import Random: Random, rand!
+#import Distributions: Distributions, Multinomial
 
 using DocStringExtensions:
     DocStringExtensions, TYPEDEF, TYPEDFIELDS, FIELDS, SIGNATURES, FUNCTIONNAME
@@ -63,7 +78,7 @@ using ArgCheck: ArgCheck, @argcheck
 using UnPack: UnPack, @unpack, @pack!
 
 using Random: Random, AbstractRNG, GLOBAL_RNG
-using Distributions: Distributions, logpdf
+using Distributions: Distributions, logpdf, Categorical
 using ElasticArrays: ElasticArrays, ElasticMatrix
 using Statistics: Statistics, mean
 
@@ -88,7 +103,14 @@ export
     propagate,
     propagate!,
     TemperDefault,
+    resample!,
+    ParameterWeighting,
+    ResamplingMethod,
+    shuffle!,
+    shuffle_forward!,
+    shuffle_backward!,
 
+    # BaytesFilters
     dynamics
 
 end

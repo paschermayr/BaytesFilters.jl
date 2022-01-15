@@ -35,20 +35,5 @@ function update!(buffer::ParticleBuffer, Nparticles::Integer, Ndata::Integer)
 end
 
 ############################################################################################
-"""
-$(SIGNATURES)
-Check if trajectories have to be resampled.
-
-# Examples
-```julia
-```
-
-"""
-function resample_maybe(ESS::T, threshold::T) where {T<:Real}
-    #!NOTE: "<=" so Resampling at each iteration if threshold == 1.0
-    return ESS <= threshold
-end
-
-############################################################################################
 #export
-export ParticleBuffer, update!, resample_maybe
+export ParticleBuffer, update!

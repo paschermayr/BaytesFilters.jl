@@ -42,7 +42,7 @@ Holds tuning information for Particle Filter.
 $(TYPEDFIELDS)
 """
 struct ParticleFilterTune{
-    T<:Tagged,A<:ParticleWeighting,B<:ParticleResampling,C<:ParticleReferencing,D,E,F,G
+    T<:Tagged,A<:BaytesCore.ParameterWeighting,B<:BaytesCore.ResamplingMethod,C<:ParticleReferencing,D,E,F,G
 } <: AbstractTune
     "Tagged Model parameter."
     tagged::T
@@ -54,8 +54,8 @@ struct ParticleFilterTune{
     referencing::C
     "Contains data and reference size and sorting."
     config::ParticleFilterConfig{D,E,F,G}
-    "Number of particles and tuning information."
-    particles::ParticlesTune
+    "Number of particle chains and tuning information."
+    chains::BaytesCore.ChainsTune
     "Memory for latent and observed data."
     memory::ParticleFilterMemory
     "Current iteration."
@@ -66,13 +66,13 @@ struct ParticleFilterTune{
         resampling::B,
         referencing::C,
         config::ParticleFilterConfig{D,E,F,G},
-        particles::ParticlesTune,
+        chains::BaytesCore.ChainsTune,
         memory::ParticleFilterMemory,
         iter::Iterator,
     ) where {
         O<:Objective,
-        A<:ParticleWeighting,
-        B<:ParticleResampling,
+        A<:BaytesCore.ParameterWeighting,
+        B<:BaytesCore.ResamplingMethod,
         C<:ParticleReferencing,
         D,
         E,
@@ -85,7 +85,7 @@ struct ParticleFilterTune{
             resampling,
             referencing,
             config,
-            particles,
+            chains,
             memory,
             iter,
         )
@@ -101,7 +101,7 @@ function update!(tune::ParticleFilterTune, data::AbstractArray, reference::Abstr
     update!(tune.config, data, reference)
     Ndata = maximum(tune.config.data.size)
     ## Update Number of Particles
-    update_Nparticles, update_Ndata = update!(tune.particles, Ndata)
+    update_Nparticles, update_Ndata = update!(tune.chains, Ndata)
     ## Return if adjustments in either dimension are needed
     return update_Nparticles, update_Ndata, Ndata
 end

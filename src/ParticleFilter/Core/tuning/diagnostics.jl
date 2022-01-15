@@ -8,7 +8,7 @@ Contains information about log-likelihood, expected sample size and proposal tra
 ```
 
 """
-struct ParticleDiagnostics{D} <: AbstractDiagnostics
+struct ParticleFilterDiagnostics{D} <: AbstractDiagnostics
     "Log likelihood approximation."
     ℓℒ::Float64
     "Log likelihood approximation at current iteration."
@@ -19,7 +19,7 @@ struct ParticleDiagnostics{D} <: AbstractDiagnostics
     resampled::Float64
     "Prediction of latent and observed variable after last proposal step."
     prediction::D
-    function ParticleDiagnostics(
+    function ParticleFilterDiagnostics(
         ℓℒ::Float64, ℓℒₜ::Float64, Nparticles::Int64, resampled::Float64, prediction::D
     ) where {D}
         return new{D}(ℓℒ, ℓℒₜ, Nparticles, resampled, prediction)
@@ -36,7 +36,7 @@ Show relevant diagnostic results.
 ```
 
 """
-function generate_showvalues(diagnostics::D) where {D<:ParticleDiagnostics}
+function generate_showvalues(diagnostics::D) where {D<:ParticleFilterDiagnostics}
     return function showvalues()
         return (:pf, "diagnostics"),
         (:loglik_estimate, diagnostics.ℓℒ), (:Nparticles, diagnostics.Nparticles),
@@ -46,4 +46,4 @@ end
 
 ############################################################################################
 #export
-export ParticleDiagnostics, generate_showvalues
+export ParticleFilterDiagnostics, generate_showvalues

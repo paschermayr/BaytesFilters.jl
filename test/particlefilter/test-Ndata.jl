@@ -13,7 +13,7 @@ _vals, _diag = propose(_rng, markov_pf, markov_objective)
     @test size(markov_pf.particles.val,2) == Ndata
     @test size(markov_pf.particles.ancestor,2) == Ndata
     @test length(markov_pf.particles.buffer.resampled) == Ndata
-    @test markov_pf.tune.particles.Ndata == Ndata
+    @test markov_pf.tune.chains.Ndata == Ndata
 end
 
 #=

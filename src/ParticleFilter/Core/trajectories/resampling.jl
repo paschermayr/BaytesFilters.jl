@@ -1,35 +1,14 @@
-#= DISCLAIMER!:
-	Original functions for resampling taken from: https://github.com/TuringLang/AdvancedPS.jl/blob/master/src/resampling.jl
+#= DISCLAIMER:
+	Functions for resampling taken and adjusted from: https://github.com/TuringLang/AdvancedPS.jl/blob/master/src/resampling.jl
 =#
 
 ############################################################################################
-# Types and structs - Resampling Methods
-struct Simple <: ParticleResampling end
-struct Systematic <: ParticleResampling end
-struct Stratified <: ParticleResampling end
-struct Residual <: ParticleResampling end
+# Types and structs - Add to existing Resampling Methods
 
-############################################################################################
-"""
-$(SIGNATURES)
-Resample particles, dispatched on ParticleResampling subtypes.
-
-# Examples
-```julia
-```
-
-"""
-function resample! end
-function resample!(
-    _rng::Random.AbstractRNG,
-    type::S,
-    container::AbstractMatrix{<:Integer},
-    iter::Integer,
-    weights::Vector{<:Real},
-    n::Integer=length(weights),
-) where {S<:ParticleResampling}
-    return resample!(_rng, type, view(container, :, iter), iter, weights, n)
-end
+struct Systematic <: BaytesCore.ResamplingMethod end
+struct Stratified <: BaytesCore.ResamplingMethod end
+struct Residual <: BaytesCore.ResamplingMethod end
+struct Multinomial <: BaytesCore.ResamplingMethod end
 
 ############################################################################################
 function resample!(
@@ -130,7 +109,7 @@ end
 ############################################################################################
 function resample!(
     _rng::Random.AbstractRNG,
-    type::Simple,
+    type::Multinomial,
     container::AbstractVector{<:Integer},
     iter::Integer,
     weights::Vector{<:Real},
@@ -141,30 +120,9 @@ function resample!(
 end
 
 ############################################################################################
-#= DISCLAIMER:
-	Original function taken from: https://github.com/TuringLang/AdvancedPS.jl/blob/master/src/resampling.jl
-=#
-"""
-$(SIGNATURES)
-More stable, faster version of rand(Categorical) if weights sum up to 1.
-
-# Examples
-```julia
-```
-
-"""
-function randcat(_rng::Random.AbstractRNG, p::AbstractVector{<:Real})
-    T = eltype(p)
-    r = rand(_rng, T)
-    cp = p[1]
-    s = 1
-    n = length(p)
-    while cp <= r && s < n
-        @inbounds cp += p[s += 1]
-    end
-    return s
-end
-
-############################################################################################
 #Export
-export resample!, randcat, Simple, Systematic, Stratified, Residual
+export
+    resample!,
+    Systematic,
+    Stratified,
+    Residual#, Multinomial

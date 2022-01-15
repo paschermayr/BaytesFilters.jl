@@ -30,7 +30,7 @@ mutable struct Particles{P<:ParticleKernel,B,I<:Integer}
     "Distributions to propagate particle forward."
     kernel::P
     "Particle weights."
-    weights::ParticleWeights
+    weights::BaytesCore.ParameterWeights
     "Necessary buffer values for resampling particles."
     buffer::ParticleBuffer{B,I}
     "Log likelihood estimate."
@@ -47,7 +47,7 @@ mutable struct Particles{P<:ParticleKernel,B,I<:Integer}
         ## Create ancestors - switch Nparticles, Ndata for easier access in resampling step
         ancestor = ElasticMatrix(repeat(F.(1:Nparticles), 1, Ndata))
         ## Create initial weights
-        weights = ParticleWeights(Nparticles)
+        weights = BaytesCore.ParameterWeights(Nparticles)
         ## Create buffer
         buffer = ParticleBuffer(reference, Nparticles, Ndata, F)
         ## Return Particles
@@ -107,7 +107,7 @@ function ancestors!(
         tune.resampling,
         ancestor,
         tune.iter.current - 1,
-        tune.particles.Nparticles,
+        tune.chains.Nchains,
         particles.weights.buffer,
     )
 end
@@ -181,7 +181,7 @@ function resize!(
     ## Update buffer
     update!(particles.buffer, Nparticles, Ndata)
     ## Compute new initial weights
-    particles.weights = ParticleWeights(Nparticles)
+    particles.weights = BaytesCore.ParameterWeights(Nparticles)
     ##
     return nothing
 end
@@ -272,8 +272,8 @@ function resample!(
     reference::AbstractArray{P},
 ) where {P}
     #!NOTE: Resampling step for t-1 done at iteration t, before propagation starts. So ancestors_t-1 for particle_t are stored
-    if resample_maybe(
-        computeESS(particles.weights), tune.particles.Nparticles * tune.particles.threshold
+    if BaytesCore.islarger(
+        BaytesCore.computeESS(particles.weights), tune.chains.Nchains * tune.chains.threshold
     )
         ## Resample ancestors
         ancestors!(_rng, particles, tune)
@@ -282,7 +282,7 @@ function resample!(
         ## Set resampled == true in corresponding iteration -> happens at start of iteration, so iter-1 for resampled particles
         particles.buffer.resampled[tune.iter.current - 1] = true
         ## Equal weight normalized weights for next iteration memory
-        Base.fill!(particles.weights.ℓweightsₙ, log(1.0 / tune.particles.Nparticles))
+        Base.fill!(particles.weights.ℓweightsₙ, log(1.0 / tune.chains.Nchains))
         ## Shuffle particles according to resampled indices
         #!NOTE: We shuffle particles at iter-1 since we are doing this before transition at iter
         shuffle_forward!(particles, tune)
@@ -349,7 +349,7 @@ function propagate!(
     objective::Objective,
 ) where {P}
     #!NOTE: Ndata a bit more flexible than size(reference, 1), as one could only propagate a few iterations even if more samples are known.
-    for t in (tune.iter.current):(tune.particles.Ndata)
+    for t in (tune.iter.current):(tune.chains.Ndata)
         ## Resample particle ancestors if resampling criterion fullfiled
         resample!(_rng, particles, tune, reference)
         ## Transition particles
@@ -436,4 +436,4 @@ end
 
 ############################################################################################
 #export
-export Particles, shuffle!, resample!, initial!, propagate!, predict
+export Particles, resample!, initial!, propagate!, predict
