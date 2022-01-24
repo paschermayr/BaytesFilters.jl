@@ -52,17 +52,14 @@ using BaytesCore:
     grab,
     ArrayConfig,
     to_NamedTuple,
-    TemperDefault,
-    TemperingTune,
-    TemperingParameter,
     update,
-    checktemperature,
     ParameterWeights,
     draw!,
     normalize!,
     computeESS,
     randcat,
-    ChainsTune
+    ChainsTune,
+    ParameterBuffer
 
 import ModelWrappers: ModelWrappers, predict
 using ModelWrappers:
@@ -102,7 +99,6 @@ export
     propose!,
     propagate,
     propagate!,
-    TemperDefault,
     resample!,
     ParameterWeighting,
     ResamplingMethod,

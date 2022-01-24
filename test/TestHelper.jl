@@ -22,7 +22,7 @@ markov_param = (;
     ),
     latent=Param(markov_latent, Fixed()),
 )
-struct HMM <: AbstractModel end
+struct HMM <: ModelName end
 hmm = ModelWrapper(HMM(), markov_param)
 markov_objective = Objective(hmm, markov_data, :latent)
 
@@ -71,7 +71,7 @@ semimarkov_param = (;
     p=Param([[1], [1]], Fixed()),
     latent=Param(semimarkov_latent, Fixed()),
 )
-struct HSMM <: AbstractModel end
+struct HSMM <: ModelName end
 hsmm = ModelWrapper(HSMM(), semimarkov_param)
 semimarkov_objective = Objective(hsmm, semimarkov_data, :latent)
 
@@ -115,7 +115,7 @@ HO_param = (
     ϕ=Param(0.90, Uniform(-1.0, 1.0)),
     latent=Param(HO_latent, [Normal(0.0, 10) for i in Base.OneTo(N)]),
 )
-struct Markov_HO <: AbstractModel end
+struct Markov_HO <: ModelName end
 markov_HO = ModelWrapper(Markov_HO(), HO_param)
 markov_HO_objective = Objective(markov_HO, HO_data, :latent)
 

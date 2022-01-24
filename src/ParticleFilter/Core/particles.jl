@@ -140,20 +140,20 @@ end
 function shuffle_forward!(particles::Particles, tune::ParticleFilterTune)
     return shuffle_forward!(
         particles.val,
-        particles.buffer.val,
+        particles.buffer.parameter.val,
         particles.ancestor,
-        particles.buffer.ancestor,
+        particles.buffer.parameter.index,
         tune.memory.latent,
         tune.iter.current - 1,
     )
 end
 function shuffle_backward!(particles::Particles, tune::ParticleFilterTune)
     return shuffle_backward!(
-        particles.val, particles.buffer.val, particles.ancestor, particles.buffer.ancestor
+        particles.val, particles.buffer.parameter.val, particles.ancestor, particles.buffer.parameter.index
     )
 end
 function shuffle!(particles::Particles)
-    return shuffle!(particles.val, particles.buffer.val, particles.buffer.ancestor)
+    return shuffle!(particles.val, particles.buffer.parameter.val, particles.buffer.parameter.index)
 end
 
 ############################################################################################
@@ -290,7 +290,7 @@ function resample!(
         ## Set resampled to false
         particles.buffer.resampled[tune.iter.current - 1] = false
         ## Assign default order to ancestors
-        @inbounds for Nrow in Base.OneTo(length(particles.buffer.val)) #size(particles.ancestor[tune.iter.current-1], 1) )
+        @inbounds for Nrow in Base.OneTo(length(particles.buffer.parameter.val)) #size(particles.ancestor[tune.iter.current-1], 1) )
             particles.ancestor[Nrow, tune.iter.current - 1] = Nrow
         end
     end

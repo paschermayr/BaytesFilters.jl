@@ -8,10 +8,8 @@ Contains temporary buffer values to avoid allocations during particle propagatio
 $(TYPEDFIELDS)
 """
 struct ParticleBuffer{A,I}
-    "Placeholder for particle trajectory if resampling is applied."
-    val::Vector{A}
-    "Buffer for resampled particle trajectory indices."
-    ancestor::Vector{I}
+    "Contains buffer values for particles and ancestor for one iteration."
+    parameter::BaytesCore.ParameterBuffer{A, I}
     "Proposal trajectory and predicted latent variable."
     proposal::Vector{A}
     "Stores boolean if resampled at each iteration."
@@ -19,16 +17,14 @@ struct ParticleBuffer{A,I}
     function ParticleBuffer(
         reference::AbstractVector{A}, Nparticles::Integer, Ndata::Integer, F::Type{I}
     ) where {A,I<:Integer}
-        val = typeof(reference)(undef, Nparticles)
-        ancestor = Vector{F}(undef, Nparticles)
+        parameter = BaytesCore.ParameterBuffer(reference, Nparticles, F)
         proposal = typeof(reference)(undef, Ndata)
         resampled = zeros(Bool, Ndata)
-        return new{A,I}(val, ancestor, proposal, resampled)
+        return new{A,I}(parameter, proposal, resampled)
     end
 end
 function update!(buffer::ParticleBuffer, Nparticles::Integer, Ndata::Integer)
-    resize!(buffer.val, Nparticles)
-    resize!(buffer.ancestor, Nparticles)
+    resize!(buffer.parameter, Nparticles)
     resize!(buffer.proposal, Ndata)
     resize!(buffer.resampled, Ndata)
     return nothing

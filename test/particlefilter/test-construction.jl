@@ -22,16 +22,13 @@ for iter in eachindex(objectives)
                 ## Check if Default options work
                 ParticleFilter(_rng, _obj; default = pfdefault)
                 ParticleFilter(_rng, _obj, 1; default = pfdefault)
-                ParticleFilter(_rng, _obj, 1, TemperDefault(); default = pfdefault)
                 ## Check if we can initiate from Constructor
                 constructor = ParticleFilterConstructor(:latent, pfdefault)
-                constructor(_rng, _obj.model, _obj.data, 1, TemperDefault())
+                constructor(_rng, _obj.model, _obj.data, 1, 1.)
                 ## Initialize kernel and check if it can be run
                 pfkernel = ParticleFilter(
                     _rng,
-                    _obj,
-                    1,
-                    TemperDefault(UpdateTrue(), 0.5);
+                    _obj;
                     default = pfdefault
                 )
                 propose(_rng, pfkernel, _obj)

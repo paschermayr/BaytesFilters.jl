@@ -3,7 +3,7 @@
 markov_data_small = randn(_rng, Float16, 50)
 markov_data_large = randn(_rng, Float16, 10000)
 
-markov_pf = ParticleFilter(deepcopy(markov_objective))
+markov_pf = ParticleFilter(_rng, deepcopy(markov_objective))
 _vals, _diag = propose(_rng, markov_pf, markov_objective)
 
 @testset "PF - Markov Allocations - Data smaller than initiation" begin
@@ -17,7 +17,7 @@ _vals, _diag = propose(_rng, markov_pf, markov_objective)
 end
 
 #=
-markov_pf = ParticleFilter(deepcopy(markov_objective))
+markov_pf = ParticleFilter(_rng, deepcopy(markov_objective))
 _vals, _diag = propose(_rng, markov_pf, markov_objective)
 
 @testset "PF - SemiMarkov Allocations - Data larger than initiation" begin

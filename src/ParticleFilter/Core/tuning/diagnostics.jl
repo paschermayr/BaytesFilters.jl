@@ -8,11 +8,13 @@ Contains information about log-likelihood, expected sample size and proposal tra
 ```
 
 """
-struct ParticleFilterDiagnostics{D} <: AbstractDiagnostics
+struct ParticleFilterDiagnostics{D,T<:AbstractFloat} <: AbstractDiagnostics
     "Log likelihood approximation."
     ℓℒ::Float64
     "Log likelihood approximation at current iteration."
     ℓℒₜ::Float64
+    "Temperature of objective function."
+    temperature::T
     "Number of particles used in proposal steps."
     Nparticles::Int64
     "Average number of resampling steps."
@@ -20,9 +22,9 @@ struct ParticleFilterDiagnostics{D} <: AbstractDiagnostics
     "Prediction of latent and observed variable after last proposal step."
     prediction::D
     function ParticleFilterDiagnostics(
-        ℓℒ::Float64, ℓℒₜ::Float64, Nparticles::Int64, resampled::Float64, prediction::D
-    ) where {D}
-        return new{D}(ℓℒ, ℓℒₜ, Nparticles, resampled, prediction)
+        ℓℒ::Float64, ℓℒₜ::Float64, temperature::T, Nparticles::Int64, resampled::Float64, prediction::D
+    ) where {D,T<:AbstractFloat}
+        return new{D,T}(ℓℒ, ℓℒₜ, temperature, Nparticles, resampled, prediction)
     end
 end
 
@@ -39,8 +41,10 @@ Show relevant diagnostic results.
 function generate_showvalues(diagnostics::D) where {D<:ParticleFilterDiagnostics}
     return function showvalues()
         return (:pf, "diagnostics"),
-        (:loglik_estimate, diagnostics.ℓℒ), (:Nparticles, diagnostics.Nparticles),
-        (:resampled, diagnostics.resampled)
+        (:loglik_estimate, diagnostics.ℓℒ),
+        (:Nparticles, diagnostics.Nparticles),
+        (:resampled, diagnostics.resampled),
+        (:Temperature, diagnostics.temperature)
     end
 end
 

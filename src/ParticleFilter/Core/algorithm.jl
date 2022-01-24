@@ -62,15 +62,10 @@ end
 function ParticleFilter(
     _rng::Random.AbstractRNG,
     objective::Objective,
-    Nchains::Integer = 1,
-    temperdefault::BaytesCore.TemperDefault{B, T} =
-            BaytesCore.TemperDefault(BaytesCore.UpdateFalse(),
-            objective.model.info.flattendefault.output(1.0)
-        );
+    Nchains::Integer = 1;
     default::P=ParticleFilterDefault()
-) where {P<:ParticleFilterDefault, B<:BaytesCore.UpdateBool, T<:AbstractFloat}
+) where {P<:ParticleFilterDefault}
     ## Checks before algorithm is initiated
-    #ArgCheck.@argcheck Nchains == length(temperdefault.val) "Nchains and number of temperatures differ in size."
     ArgCheck.@argcheck hasmethod(dynamics, Tuple{typeof(objective)}) "No Filter dynamics given your objective exists - assign dynamics(objective::Objective{MyModel})"
     @unpack weighting, resampling, referencing, coverage, threshold, TunedModel = default
     @unpack model, data, tagged = objective
@@ -101,17 +96,6 @@ function ParticleFilter(
     particles = Particles(reference, kernel, Nparticles, Ndata)
     ## Return Particle filter
     return ParticleFilter(particles, tune)
-end
-function ParticleFilter(
-    objective::Objective,
-    Nchains::Integer = 1,
-    temperdefault::BaytesCore.TemperDefault{B, T} =
-            BaytesCore.TemperDefault(BaytesCore.UpdateFalse(),
-            objective.model.info.flattendefault.output(1.0)
-        );
-    kwargs...
-) where {B<:BaytesCore.UpdateBool, T<:AbstractFloat}
-    return ParticleFilter(Random.GLOBAL_RNG, objective, Nchains, temperdefault; kwargs...)
 end
 
 ############################################################################################
@@ -147,6 +131,7 @@ function propose(
     diagnostics = ParticleFilterDiagnostics(
         pf.particles.ℓℒ.cumulative,
         pf.particles.ℓℒ.current,
+        objective.temperature,
         pf.tune.chains.Nchains,
         mean(pf.particles.buffer.resampled),
         prediction,
@@ -164,13 +149,6 @@ function propose(
     ## Return new model parameter and diagnostics
     return objective.model.val, diagnostics
 end
-function propose(
-    pf::ParticleFilter,
-    objective::Objective,
-    reference::AbstractArray{P}=get_reference(pf.tune.referencing, objective),
-) where {P}
-    return propose(Random.GLOBAL_RNG, pf, objective, reference)
-end
 
 ############################################################################################
 """
@@ -187,10 +165,11 @@ function propose!(
     pf::ParticleFilter,
     model::ModelWrapper,
     data::D,
+    temperature::T = model.info.flattendefault.output(1.0),
     update::U=BaytesCore.UpdateTrue(),
-) where {D,U<:BaytesCore.UpdateBool}
+) where {D, T<:AbstractFloat, U<:BaytesCore.UpdateBool}
     ## Update PF parameter
-    objective = Objective(model, data, pf.tune.tagged)
+    objective = Objective(model, data, pf.tune.tagged, temperature)
     ## Collect reference
     reference = get_reference(pf.tune.referencing, objective)
     ## Check if Ndata and Nparticles have to be adjusted
@@ -215,11 +194,6 @@ function propose!(
     ## Return diagnostics
     return val, diagnostics
 end
-function propose!(
-    pf::ParticleFilter, model::ModelWrapper, data::D, update::U=BaytesCore.UpdateTrue()
-) where {D,U<:BaytesCore.UpdateBool}
-    return propose!(Random.GLOBAL_RNG, pf, model, data, update)
-end
 
 ############################################################################################
 """
@@ -232,12 +206,16 @@ Propagate particle filter forward with new data.
 
 """
 function propagate!(
-    _rng::Random.AbstractRNG, pf::ParticleFilter, model::ModelWrapper, data::D
-) where {D}
+    _rng::Random.AbstractRNG,
+    pf::ParticleFilter,
+    model::ModelWrapper,
+    data::D,
+    temperature::T = 1.0
+) where {D, T<:AbstractFloat}
     ## Check if pf and data fulfill requirements for particle propagation
     ArgCheck.@argcheck isa(pf.tune.referencing, Marginal) "PF propagation only allowed for marginal particle filter"
     ## Assign new dynamics in case particles dependent on data
-    objective = Objective(model, data, pf.tune.tagged)
+    objective = Objective(model, data, pf.tune.tagged, temperature)
     pf.particles.kernel = dynamics(objective)
     ## Collect reference trajectory
     reference = get_reference(pf.tune.referencing, objective)
@@ -263,10 +241,10 @@ function propagate!(
             pf.tune.chains.Nchains * pf.tune.chains.threshold,
         )
             ## Resample ancestors
-            ancestors!(_rng, pf.particles, pf.tune, pf.particles.buffer.ancestor)
+            ancestors!(_rng, pf.particles, pf.tune, pf.particles.buffer.parameter.index)
             ## Compute new reference ancestor ~ reference does not matter in Marginal case
             get_reference!(
-                _rng, pf.particles, pf.tune, reference, pf.particles.buffer.ancestor
+                _rng, pf.particles, pf.tune, reference, pf.particles.buffer.parameter.index
             )
             pf.particles.buffer.resampled[iter] = true
             ## Equal weight normalized weights for next iteration memory
@@ -310,15 +288,13 @@ function propagate!(
     ## Create Diagnostics and return output
     diagnostics = ParticleFilterDiagnostics(
         pf.particles.ℓℒ.cumulative,
+        temperature,
         pf.particles.ℓℒ.current,
         pf.tune.chains.Nchains,
         mean(pf.particles.buffer.resampled),
         prediction,
     )
     return model.val, diagnostics
-end
-function propagate!(pf::ParticleFilter, model::ModelWrapper, data::D) where {D}
-    return propagate!(Random.GLOBAL_RNG, pf, model, data)
 end
 
 ############################################################################################

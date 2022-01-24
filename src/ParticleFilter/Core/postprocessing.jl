@@ -22,11 +22,17 @@ struct ParticleFilterConstructor{
     end
 end
 function (constructor::ParticleFilterConstructor)(
-    _rng::Random.AbstractRNG, model::ModelWrapper, data::D,
-    Nchains::Integer, temperdefault::BaytesCore.TemperDefault{B, F}
-) where {D, B<:BaytesCore.UpdateBool, F<:AbstractFloat}
+    _rng::Random.AbstractRNG,
+    model::ModelWrapper,
+    data::D,
+    Nchains::Integer,
+    temperature::F
+) where {D, F<:AbstractFloat}
     return ParticleFilter(
-        _rng, Objective(model, data, constructor.sym), Nchains, temperdefault; default=constructor.default
+        _rng,
+        Objective(model, data, Tagged(model, constructor.sym), temperature),
+        Nchains;
+        default=constructor.default
     )
 end
 function ParticleFilter(sym::S; kwargs...) where {S<:Union{Symbol,NTuple{k,Symbol} where k}}
@@ -50,7 +56,9 @@ function infer(
     model::ModelWrapper,
     data::D,
 ) where {D}
-    return ParticleFilterDiagnostics{infer(_rng, pf, model, data)}
+    TTemperature = model.info.flattendefault.output
+    TPrediction = infer(_rng, pf, model, data)
+    return ParticleFilterDiagnostics{TPrediction, TTemperature}
 end
 
 """

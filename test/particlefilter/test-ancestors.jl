@@ -34,7 +34,7 @@ end
 
 ############################################################################################
 # run PF and check if correct state trajectories
-semimarkov_pf = ParticleFilter(semimarkov_objective)
+semimarkov_pf = ParticleFilter(_rng, semimarkov_objective)
 _vals, _diag = propose(_rng, semimarkov_pf, semimarkov_objective)
 
 @testset "PF - Ancestors - SemiMarkov" begin
