@@ -128,28 +128,14 @@ function results(
 end
 
 ############################################################################################
+function result!(pf::ParticleFilter, result::L) where {L<:ℓObjectiveResult}
+    return error("Not implemented for ParticleFilter.")
+end
 function get_result(pf::ParticleFilter)
-    return nothing
+    return error("Not implemented for ParticleFilter.")
 end
-
-function get_tagged(pf::ParticleFilter)
-    return pf.tune.tagged
-end
-
-function get_loglik(pf::ParticleFilter)
+function get_ℓweight(pf::ParticleFilter)
     return pf.particles.ℓℒ.cumulative
-end
-
-function get_prediction(diagnostics::ParticleFilterDiagnostics)
-    return diagnostics.prediction
-end
-
-function get_phase(pf::ParticleFilter)
-    return nothing
-end
-
-function get_iteration(pf::ParticleFilter)
-    return nothing
 end
 
 ############################################################################################
