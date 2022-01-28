@@ -57,13 +57,12 @@ using BaytesCore:
     ChainsTune,
     ParameterBuffer
 
-import ModelWrappers: ModelWrappers, predict
+import ModelWrappers: ModelWrappers, predict, dynamics
 using ModelWrappers:
     ModelWrappers, ModelWrapper, Tagged, Objective, DiffObjective, ℓObjectiveResult
 
 import Base: max, push!, resize!
 import Random: Random, rand!
-#import Distributions: Distributions, Multinomial
 
 using DocStringExtensions:
     DocStringExtensions, TYPEDEF, TYPEDFIELDS, FIELDS, SIGNATURES, FUNCTIONNAME
@@ -74,10 +73,6 @@ using Random: Random, AbstractRNG, GLOBAL_RNG
 using Distributions: Distributions, logpdf, Categorical
 using ElasticArrays: ElasticArrays, ElasticMatrix
 using Statistics: Statistics, mean
-
-############################################################################################
-# Define functions to be dispatched so Models can be used via BaytesFilters
-function dynamics end
 
 ############################################################################################
 # Import sub-folder
@@ -102,7 +97,8 @@ export
     shuffle_forward!,
     shuffle_backward!,
 
-    # BaytesFilters
+    # ModelWrappers
+    predict,
     dynamics
 
 end

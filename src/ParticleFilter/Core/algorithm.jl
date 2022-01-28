@@ -70,7 +70,7 @@ function ParticleFilter(
     @unpack weighting, resampling, referencing, coverage, threshold, TunedModel = default
     @unpack model, data, tagged = objective
     ## Assign model dynamics
-    kernel = dynamics(objective)
+    kernel = ModelWrappers.dynamics(objective)
     ## Initiate a valid reference given model.data and tagged.parameter
     reference = get_reference(referencing, objective)
     ## Guess particle and data memory
@@ -216,7 +216,7 @@ function propagate!(
     ArgCheck.@argcheck isa(pf.tune.referencing, Marginal) "PF propagation only allowed for marginal particle filter"
     ## Assign new dynamics in case particles dependent on data
     objective = Objective(model, data, pf.tune.tagged, temperature)
-    pf.particles.kernel = dynamics(objective)
+    pf.particles.kernel = ModelWrappers.dynamics(objective)
     ## Collect reference trajectory
     reference = get_reference(pf.tune.referencing, objective)
     # Check if reference no larger than data dimension
