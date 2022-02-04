@@ -62,9 +62,9 @@ end
 function ParticleFilter(
     _rng::Random.AbstractRNG,
     objective::Objective,
-    Nchains::Integer = 1;
-    default::P=ParticleFilterDefault()
-) where {P<:ParticleFilterDefault}
+    default::ParticleFilterDefault=ParticleFilterDefault(),
+    info::BaytesCore.SampleDefault = BaytesCore.SampleDefault()
+)
     ## Checks before algorithm is initiated
     ArgCheck.@argcheck hasmethod(dynamics, Tuple{typeof(objective)}) "No Filter dynamics given your objective exists - assign dynamics(objective::Objective{MyModel})"
     @unpack weighting, resampling, referencing, coverage, threshold, TunedModel = default

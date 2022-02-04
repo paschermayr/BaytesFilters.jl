@@ -55,7 +55,8 @@ using BaytesCore:
     computeESS,
     randcat,
     ChainsTune,
-    ParameterBuffer
+    ParameterBuffer,
+    SampleDefault
 
 import ModelWrappers: ModelWrappers, predict, dynamics
 using ModelWrappers:
@@ -96,6 +97,7 @@ export
     shuffle!,
     shuffle_forward!,
     shuffle_backward!,
+    SampleDefault
 
     # ModelWrappers
     predict,

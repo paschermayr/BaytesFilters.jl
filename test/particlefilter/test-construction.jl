@@ -20,16 +20,16 @@ for iter in eachindex(objectives)
                     resampling = _resample
                 )
                 ## Check if Default options work
-                ParticleFilter(_rng, _obj; default = pfdefault)
-                ParticleFilter(_rng, _obj, 1; default = pfdefault)
+                ParticleFilter(_rng, _obj, pfdefault)
+                ParticleFilter(_rng, _obj, pfdefault, SampleDefault())
                 ## Check if we can initiate from Constructor
                 constructor = ParticleFilterConstructor(:latent, pfdefault)
-                constructor(_rng, _obj.model, _obj.data, 1, 1.)
+                constructor(_rng, _obj.model, _obj.data, 1., SampleDefault())
                 ## Initialize kernel and check if it can be run
                 pfkernel = ParticleFilter(
                     _rng,
-                    _obj;
-                    default = pfdefault
+                    _obj,
+                    pfdefault
                 )
                 propose(_rng, pfkernel, _obj)
                 @test size(pfkernel.particles.val, 2) == length(_obj.data)

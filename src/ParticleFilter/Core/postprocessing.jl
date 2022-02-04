@@ -25,14 +25,14 @@ function (constructor::ParticleFilterConstructor)(
     _rng::Random.AbstractRNG,
     model::ModelWrapper,
     data::D,
-    Nchains::Integer,
-    temperature::F
+    temperature::F,
+    info::BaytesCore.SampleDefault
 ) where {D, F<:AbstractFloat}
     return ParticleFilter(
         _rng,
         Objective(model, data, Tagged(model, constructor.sym), temperature),
-        Nchains;
-        default=constructor.default
+        constructor.default,
+        info
     )
 end
 function ParticleFilter(sym::S; kwargs...) where {S<:Union{Symbol,NTuple{k,Symbol} where k}}
