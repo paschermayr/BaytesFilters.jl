@@ -117,7 +117,7 @@ pfdefault = ParticleFilterDefault(;
     coverage=0.50, #Coverage of Nparticles/Ndata.
     threshold=0.75, #ESS threshold for resampling particle trajectories.
 )
-myfilter = ParticleFilter(myobjective2; default = pfdefault )
+myfilter = ParticleFilter(myobjective2, pfdefault)
 ```
 
 There are a variety of methods for `ParticleFilterDefault` fields. For now, you have to check all options in the code base if you want to adjust the default arguments.
@@ -129,8 +129,8 @@ The particle filter implementation scales linearly in both the number of particl
 using BenchmarkTools
 pfdefault1 = ParticleFilterDefault(; coverage=0.5)
 pfdefault2 = ParticleFilterDefault(; coverage=1.0)
-myfilter1 = ParticleFilter(myobjective2; default=pfdefault1)
-myfilter2 = ParticleFilter(myobjective2; default=pfdefault2)
+myfilter1 = ParticleFilter(myobjective2, pfdefault1)
+myfilter2 = ParticleFilter(myobjective2, pfdefault2)
 @btime propose($_rng, $myfilter1, $myobjective2) #12.522 ms (8 allocations: 16.20 KiB)
 @btime propose($_rng, $myfilter2, $myobjective2) #25.992 ms (8 allocations: 16.20 KiB)
 ```
