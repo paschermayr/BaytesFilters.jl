@@ -227,35 +227,17 @@ function propagate!(
     @inbounds @simd for iter in eachindex(reference)
         pf.particles.val[end, iter] = reference[iter]
     end
-    ## Update maximal number of iterations and resize particles
+    ## Update maximal number of iterations and resize particles ~ Need to manually resize as want to keep weights
     pf.tune.chains.Ndata = maximum(size(objective.data))
     resize!(pf.particles.val, pf.tune.chains.Nchains, pf.tune.chains.Ndata)
+    resize!(pf.particles.ancestor, pf.tune.chains.Nchains, pf.tune.chains.Ndata)
     update!(pf.particles.buffer, pf.tune.chains.Nchains, pf.tune.chains.Ndata)
     ## Assign temporary variables so visible outside of data loop
     path = size(pf.particles.val, 1)
     ## Iterate through new data
     for iter in (pf.tune.iter.current):(pf.tune.chains.Ndata)
         ## Resample particle ancestors if resampling criterion fullfiled
-        if BaytesCore.islarger(
-            BaytesCore.computeESS(pf.particles.weights),
-            pf.tune.chains.Nchains * pf.tune.chains.threshold,
-        )
-            ## Resample ancestors
-            ancestors!(_rng, pf.particles, pf.tune, pf.particles.buffer.parameter.index)
-            ## Compute new reference ancestor ~ reference does not matter in Marginal case
-            get_reference!(
-                _rng, pf.particles, pf.tune, reference, pf.particles.buffer.parameter.index
-            )
-            pf.particles.buffer.resampled[iter] = true
-            ## Equal weight normalized weights for next iteration memory
-            Base.fill!(
-                pf.particles.weights.ℓweightsₙ, log(1.0 / pf.tune.chains.Nchains)
-            )
-            ## BaytesCore.shuffle all trajectories according to current resampled index
-            BaytesCore.shuffle!(pf.particles)
-        else
-            pf.particles.buffer.resampled[iter] = false
-        end
+        resample!(_rng, pf.particles, pf.tune, reference)
         ## Transition particles
         transition!(_rng, pf.particles.kernel, pf.particles.val, iter)
         ## Calculate particle weights and log likelihood
@@ -266,7 +248,7 @@ function propagate!(
             pf.tune,
         )
         update!(pf.particles.ℓℒ, logmeanexp(pf.particles.weights.ℓweights))
-        ## Compute proposal weights based on reference trajectory
+        ## Compute proposal weights based on reference trajectory ~ Differs from regular setup
         @inbounds for idx in Base.OneTo(size(pf.particles.val, 1))
             pf.particles.weights.buffer[idx] = ℓtransition(
                 pf.particles.val[idx, iter],
@@ -283,6 +265,12 @@ function propagate!(
         ## Update current iteration
         update!(pf.tune.iter)
     end
+    ## Assign default order to ancestors for final index
+    @inbounds for Nrow in Base.OneTo(length(pf.particles.buffer.parameter.val))
+        pf.particles.ancestor[Nrow, pf.tune.iter.current - 1] = Nrow
+    end
+    ## Sort all particles back into correct order
+    BaytesCore.shuffle_backward!(pf.particles, pf.tune)
     ## Predict new state and observation
     prediction = predict(_rng, pf.particles, pf.tune, reference, path)
     ## Create Diagnostics and return output

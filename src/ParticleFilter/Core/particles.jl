@@ -45,7 +45,7 @@ mutable struct Particles{P<:ParticleKernel,B,I<:Integer}
         ## Create val
         val = ElasticMatrix{T}(undef, Nparticles, Ndata)
         ## Create ancestors - switch Nparticles, Ndata for easier access in resampling step
-        ancestor = ElasticMatrix(repeat(F.(1:Nparticles), 1, Ndata))
+        ancestor = ElasticMatrix{F}(undef, Nparticles, Ndata)
         ## Create initial weights
         weights = BaytesCore.ParameterWeights(Nparticles)
         ## Create buffer
@@ -177,7 +177,7 @@ function resize!(
     particles.val = ElasticMatrix{T}(undef, Nparticles, Ndata)
     ## Change ancestor size
     F = eltype(particles.ancestor)
-    particles.ancestor = ElasticMatrix(repeat(F.(1:Nparticles), 1, Ndata))
+    particles.ancestor = ElasticMatrix{F}(undef, Nparticles, Ndata)
     ## Update buffer
     update!(particles.buffer, Nparticles, Ndata)
     ## Compute new initial weights
@@ -243,12 +243,9 @@ function update!(
     init!(particles.ℓℒ)
     ## Update kernel
     particles.kernel = kernel
-    ## Resize val
+    ## Resize val and ancestor size
     resize!(particles.val, Nparticles, Ndata)
-    ## Change ancestor size
-    #!NOTE: I need initial ancestors 1:Nparticles for final ancestor trajectory as it will not be resampled
-    F = eltype(particles.ancestor)
-    particles.ancestor = ElasticMatrix(repeat(F.(1:Nparticles), 1, Ndata))
+    resize!(particles.ancestor, Nparticles, Ndata)
     ## Resize buffer
     update!(particles.buffer, Nparticles, Ndata)
     ##
@@ -366,8 +363,12 @@ function propagate!(
             )
             update!(particles.ℓℒ, logmeanexp(particles.weights.ℓweights))
         end
-        ## Update current iteration
+        ## Update current iteration to Ndata+1 for propagation step
         update!(tune.iter)
+    end
+    ## Assign default order to ancestors for final index
+    @inbounds for Nrow in Base.OneTo(length(particles.buffer.parameter.val))
+        particles.ancestor[Nrow, tune.iter.current - 1] = Nrow
     end
     #!NOTE: NO more resampling step at final iteration, as we (1) resample ancestor (2) propagate particles, not (1) propagate particles (2) resample particles
     return nothing

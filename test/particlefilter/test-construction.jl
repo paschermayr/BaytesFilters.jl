@@ -37,7 +37,7 @@ for iter in eachindex(objectives)
                 # Check if we can propagate data forward
                 data2 = randn(length(_obj.data)+10)
                 if _reference isa Marginal
-                    propagate!(_rng, pfkernel, _obj.model, _obj.data)
+#                    propagate!(_rng, pfkernel, _obj.model, _obj.data)
                     propagate!(_rng, pfkernel, _obj.model, data2)
                     @test size(pfkernel.particles.val, 2) == length(data2)
                 end
