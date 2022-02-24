@@ -38,18 +38,18 @@ mutable struct Particles{P<:ParticleKernel,B,I<:Integer}
     function Particles(
         reference::AbstractArray{T},
         kernel::P,
+        ancestortype::Type{I},
         Nparticles::Integer,
-        Ndata::Integer,
-        F::Type{I}=Int32,
+        Ndata::Integer
     ) where {T,P<:ParticleKernel,I<:Integer}
         ## Create val
         val = ElasticMatrix{T}(undef, Nparticles, Ndata)
         ## Create ancestors - switch Nparticles, Ndata for easier access in resampling step
-        ancestor = ElasticMatrix{F}(undef, Nparticles, Ndata)
+        ancestor = ElasticMatrix{ancestortype}(undef, Nparticles, Ndata)
         ## Create initial weights
         weights = BaytesCore.ParameterWeights(Nparticles)
         ## Create buffer
-        buffer = ParticleBuffer(reference, Nparticles, Ndata, F)
+        buffer = ParticleBuffer(reference, Nparticles, Ndata, ancestortype)
         ## Return Particles
         return new{P,T,I}(val, ancestor, kernel, weights, buffer, Accumulator())
     end

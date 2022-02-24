@@ -8,7 +8,10 @@ Default arguments for Particle Filter constructor.
 $(TYPEDFIELDS)
 """
 struct ParticleFilterDefault{
-    A<:BaytesCore.ParameterWeighting,B<:BaytesCore.ResamplingMethod,C<:ParticleReferencing
+    A<:BaytesCore.ParameterWeighting,
+    B<:BaytesCore.ResamplingMethod,
+    C<:ParticleReferencing,
+    T<:Integer
 }
     "Weighting Methods for particles."
     weighting::A
@@ -20,20 +23,34 @@ struct ParticleFilterDefault{
     coverage::Float64
     "ESS threshold for resampling particle trajectories."
     threshold::Float64
+    "Type for ancestors indices"
+    ancestortype::Type{T}
     "Boolean if initial parameter are fixed or resampled."
     TunedModel::Bool
     function ParticleFilterDefault(;
-        weighting=Bootstrap(),
-        resampling=Systematic(),
-        referencing=Marginal(),
+        weighting::A=Bootstrap(),
+        resampling::B=Systematic(),
+        referencing::C=Marginal(),
         coverage=0.50,
         threshold=0.75,
+        ancestortype::Type{T}=Int32,
         TunedModel=true,
-    )
+    ) where {
+        A<:BaytesCore.ParameterWeighting,
+        B<:BaytesCore.ResamplingMethod,
+        C<:ParticleReferencing,
+        T<:Integer
+    }
         ArgCheck.@argcheck 0.0 < coverage
         ArgCheck.@argcheck 0.0 <= threshold <= 1.0
-        return new{typeof(weighting),typeof(resampling),typeof(referencing)}(
-            weighting, resampling, referencing, coverage, threshold, TunedModel
+        return new{A,B,C,T}(
+            weighting,
+            resampling,
+            referencing,
+            coverage,
+            threshold,
+            ancestortype,
+            TunedModel
         )
     end
 end
@@ -67,7 +84,7 @@ function ParticleFilter(
 )
     ## Checks before algorithm is initiated
     ArgCheck.@argcheck hasmethod(dynamics, Tuple{typeof(objective)}) "No Filter dynamics given your objective exists - assign dynamics(objective::Objective{MyModel})"
-    @unpack weighting, resampling, referencing, coverage, threshold, TunedModel = default
+    @unpack weighting, resampling, referencing, coverage, threshold, ancestortype, TunedModel = default
     @unpack model, data, tagged = objective
     ## Assign model dynamics
     kernel = ModelWrappers.dynamics(objective)
@@ -93,7 +110,7 @@ function ParticleFilter(
         Iterator(1),
     )
     ## Create Particles container
-    particles = Particles(reference, kernel, Nparticles, Ndata)
+    particles = Particles(reference, kernel, ancestortype, Nparticles, Ndata)
     ## Return Particle filter
     return ParticleFilter(particles, tune)
 end
