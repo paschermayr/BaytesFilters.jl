@@ -8,23 +8,22 @@ Contains information about log-likelihood, expected sample size and proposal tra
 ```
 
 """
-struct ParticleFilterDiagnostics{D,T<:AbstractFloat} <: AbstractDiagnostics
-    "Log likelihood approximation."
-    ℓℒ::Float64
-    "Log likelihood approximation at current iteration."
-    ℓℒₜ::Float64
-    "Temperature of objective function."
-    temperature::T
+struct ParticleFilterDiagnostics{P} <: AbstractDiagnostics
+    "Diagnostics used for all Baytes kernels"
+    base::BaytesCore.BaseDiagnostics{P}
+    "Incremental log objective at current iteration."
+    ℓincrement::Float64
     "Number of particles used in proposal steps."
     Nparticles::Int64
     "Average number of resampling steps."
     resampled::Float64
-    "Prediction of latent and observed variable after last proposal step."
-    prediction::D
     function ParticleFilterDiagnostics(
-        ℓℒ::Float64, ℓℒₜ::Float64, temperature::T, Nparticles::Int64, resampled::Float64, prediction::D
-    ) where {D,T<:AbstractFloat}
-        return new{D,T}(ℓℒ, ℓℒₜ, temperature, Nparticles, resampled, prediction)
+        base::BaytesCore.BaseDiagnostics{P},
+        ℓincrement::Float64,
+        Nparticles::Int64,
+        resampled::Float64
+    ) where {P}
+        return new{P}(base, ℓincrement, Nparticles, resampled)
     end
 end
 
@@ -41,10 +40,10 @@ Show relevant diagnostic results.
 function generate_showvalues(diagnostics::D) where {D<:ParticleFilterDiagnostics}
     return function showvalues()
         return (:pf, "diagnostics"),
-        (:loglik_estimate, diagnostics.ℓℒ),
+        (:loglik_estimate, diagnostics.base.ℓobjective),
+        (:Temperature, diagnostics.base.temperature),
         (:Nparticles, diagnostics.Nparticles),
-        (:resampled, diagnostics.resampled),
-        (:Temperature, diagnostics.temperature)
+        (:resampled, diagnostics.resampled)
     end
 end
 

@@ -56,9 +56,9 @@ function infer(
     model::ModelWrapper,
     data::D,
 ) where {D}
-    TTemperature = model.info.flattendefault.output
+    #TTemperature = model.info.flattendefault.output
     TPrediction = infer(_rng, pf, model, data)
-    return ParticleFilterDiagnostics{TPrediction, TTemperature}
+    return ParticleFilterDiagnostics{TPrediction}
 end
 
 """
@@ -104,9 +104,9 @@ function results(
     )
     println(
         "Initial ℓlikelihood: ",
-        round(mean(diagnosticsᵛ[begin].ℓℒ); digits=Ndigits),
+        round(mean(diagnosticsᵛ[begin].base.ℓobjective); digits=Ndigits),
         ", final ℓlikelihood: ",
-        round(mean(diagnosticsᵛ[end].ℓℒ); digits=Ndigits),
+        round(mean(diagnosticsᵛ[end].base.ℓobjective); digits=Ndigits),
         ".",
     )
     println(
@@ -134,10 +134,11 @@ end
 function get_result(pf::ParticleFilter)
     return error("Not implemented for ParticleFilter.")
 end
+#=
 function get_ℓweight(pf::ParticleFilter)
     return pf.particles.ℓℒ.cumulative
 end
-
+=#
 ############################################################################################
 #export
 export ParticleFilterConstructor, infer

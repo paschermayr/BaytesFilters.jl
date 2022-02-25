@@ -132,7 +132,7 @@ function propose(
     reference::AbstractArray{P}=get_reference(pf.tune.referencing, objective),
 ) where {P}
     ## Set iterations and log likelihood to initial state and resize proposal
-    init!(pf.particles.ℓℒ)
+    init!(pf.particles.ℓobjective)
     init!(pf.tune.iter, 1)
     ## Initialize particles
     initial!(_rng, pf.particles, pf.tune, reference, objective)
@@ -146,12 +146,15 @@ function propose(
     prediction = predict(_rng, pf.particles, pf.tune, reference, path)
     ## Create Diagnostics and return output
     diagnostics = ParticleFilterDiagnostics(
-        pf.particles.ℓℒ.cumulative,
-        pf.particles.ℓℒ.current,
-        objective.temperature,
+        BaytesCore.BaseDiagnostics(
+            pf.particles.ℓobjective.cumulative,
+            objective.temperature,
+            prediction,
+            pf.tune.iter.current-1
+        ),
+        pf.particles.ℓobjective.current,
         pf.tune.chains.Nchains,
         mean(pf.particles.buffer.resampled),
-        prediction,
     )
     ## Update model parameter with reference trajectory
     ModelWrappers.fill!(
@@ -264,7 +267,7 @@ function propagate!(
             pf.particles,
             pf.tune,
         )
-        update!(pf.particles.ℓℒ, logmeanexp(pf.particles.weights.ℓweights))
+        update!(pf.particles.ℓobjective, logmeanexp(pf.particles.weights.ℓweights))
         ## Compute proposal weights based on reference trajectory ~ Differs from regular setup
         @inbounds for idx in Base.OneTo(size(pf.particles.val, 1))
             pf.particles.weights.buffer[idx] = ℓtransition(
@@ -292,12 +295,15 @@ function propagate!(
     prediction = predict(_rng, pf.particles, pf.tune, reference, path)
     ## Create Diagnostics and return output
     diagnostics = ParticleFilterDiagnostics(
-        pf.particles.ℓℒ.cumulative,
-        temperature,
-        pf.particles.ℓℒ.current,
+        BaytesCore.BaseDiagnostics(
+            pf.particles.ℓobjective.cumulative,
+            temperature,
+            prediction,
+            pf.tune.iter.current-1
+        ),
+        pf.particles.ℓobjective.current,
         pf.tune.chains.Nchains,
         mean(pf.particles.buffer.resampled),
-        prediction,
     )
     return model.val, diagnostics
 end

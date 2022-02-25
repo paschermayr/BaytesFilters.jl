@@ -34,7 +34,7 @@ mutable struct Particles{P<:ParticleKernel,B,I<:Integer}
     "Necessary buffer values for resampling particles."
     buffer::ParticleBuffer{B,I}
     "Log likelihood estimate."
-    ℓℒ::Accumulator
+    ℓobjective::Accumulator
     function Particles(
         reference::AbstractArray{T},
         kernel::P,
@@ -206,7 +206,7 @@ function update!(
     Ndata::Integer,
 ) where {T,P<:ParticleKernel}
     ## Set loglikelihood counter back to 0
-    init!(particles.ℓℒ)
+    init!(particles.ℓobjective)
     ## Update kernel
     particles.kernel = kernel
     ## Return
@@ -222,7 +222,7 @@ function update!(
     Ndata::Integer,
 ) where {D<:BaytesCore.UpdateBool,T,P<:ParticleKernel}
     ## Set loglikelihood counter back to 0
-    init!(particles.ℓℒ)
+    init!(particles.ℓobjective)
     ## Update kernel
     particles.kernel = kernel
     ## Resize Particles with new Nparticles and Ndata
@@ -240,7 +240,7 @@ function update!(
     Ndata::Integer,
 ) where {T,P<:ParticleKernel}
     ## Set loglikelihood counter back to 0
-    init!(particles.ℓℒ)
+    init!(particles.ℓobjective)
     ## Update kernel
     particles.kernel = kernel
     ## Resize val and ancestor size
@@ -319,7 +319,7 @@ function initial!(
         ## Calculate particle weights and log likelihood
         @inbounds if t > tune.memory.data #maxmemory
             weight!(BaytesCore.grab(objective.data, t, tune.config.data), particles, tune)
-            update!(particles.ℓℒ, logmeanexp(particles.weights.ℓweights))
+            update!(particles.ℓobjective, logmeanexp(particles.weights.ℓweights))
         end
         #!NOTE: No Resample step at init! for particle ancestors ~ first resampling should happen in propagate!() before particle propagation starts
         ## Update current iteration
@@ -361,7 +361,7 @@ function propagate!(
                 particles,
                 tune,
             )
-            update!(particles.ℓℒ, logmeanexp(particles.weights.ℓweights))
+            update!(particles.ℓobjective, logmeanexp(particles.weights.ℓweights))
         end
         ## Update current iteration to Ndata+1 for propagation step
         update!(tune.iter)
