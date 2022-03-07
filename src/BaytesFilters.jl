@@ -44,7 +44,7 @@ using BaytesCore:
     logsumexp,
     logaddexp,
     logmeanexp,
-    islarger,
+    issmaller,
     grab,
     ArrayConfig,
     to_NamedTuple,

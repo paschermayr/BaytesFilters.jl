@@ -269,7 +269,7 @@ function resample!(
     reference::AbstractArray{P},
 ) where {P}
     #!NOTE: Resampling step for t-1 done at iteration t, before propagation starts. So ancestors_t-1 for particle_t are stored
-    if BaytesCore.islarger(
+    if BaytesCore.issmaller(
         BaytesCore.computeESS(particles.weights), tune.chains.Nchains * tune.chains.threshold
     )
         ## Resample ancestors

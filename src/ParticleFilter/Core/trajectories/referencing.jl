@@ -95,7 +95,7 @@ function ancestors!(
     Nparticles::Integer,
     weights::AbstractVector{F},
 ) where {R<:BaytesCore.ResamplingMethod,F<:AbstractFloat}
-    #!NOTE: Weights.buffer already exp.(weightsₙ) during BaytesCore.islarger( BaytesCore.computeESS(particles.weights), X) in previous step
+    #!NOTE: Weights.buffer already exp.(weightsₙ) during BaytesCore.issmaller( BaytesCore.computeESS(particles.weights), X) in previous step
     resample!(
         _rng,
         resampling,
@@ -184,7 +184,7 @@ function get_reference!(
     val::AbstractArray,
     iter::Integer,
 ) where {I<:Integer,P}
-    #!NOTE: Weights.buffer already exp.(weightsₙ) during BaytesCore.islarger( BaytesCore.computeESS(particles.weights), X) in previous step
+    #!NOTE: Weights.buffer already exp.(weightsₙ) during BaytesCore.issmaller( BaytesCore.computeESS(particles.weights), X) in previous step
     ancestor[end] = sample_ancestor(_rng, weights, referenceₜ, kernel, val, iter)
     return nothing
 end
