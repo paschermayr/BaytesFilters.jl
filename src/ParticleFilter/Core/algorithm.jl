@@ -11,7 +11,8 @@ struct ParticleFilterDefault{
     A<:BaytesCore.ParameterWeighting,
     B<:BaytesCore.ResamplingMethod,
     C<:ParticleReferencing,
-    T<:Integer
+    T<:Integer,
+    U<:BaytesCore.UpdateBool
 }
     "Weighting Methods for particles."
     weighting::A
@@ -27,6 +28,8 @@ struct ParticleFilterDefault{
     ancestortype::Type{T}
     "Boolean if initial parameter are fixed or resampled."
     TunedModel::Bool
+    "Boolean if generate(_rng, objective) for corresponding model is stored in PF Diagnostics."
+    generated::U
     function ParticleFilterDefault(;
         weighting::A=Bootstrap(),
         resampling::B=Systematic(),
@@ -35,6 +38,7 @@ struct ParticleFilterDefault{
         threshold=0.75,
         ancestortype::Type{T}=Int32,
         TunedModel=true,
+        generated=BaytesCore.UpdateFalse()
     ) where {
         A<:BaytesCore.ParameterWeighting,
         B<:BaytesCore.ResamplingMethod,
@@ -43,14 +47,15 @@ struct ParticleFilterDefault{
     }
         ArgCheck.@argcheck 0.0 < coverage
         ArgCheck.@argcheck 0.0 <= threshold <= 1.0
-        return new{A,B,C,T}(
+        return new{A,B,C,T,typeof(generated)}(
             weighting,
             resampling,
             referencing,
             coverage,
             threshold,
             ancestortype,
-            TunedModel
+            TunedModel,
+            generated
         )
     end
 end
@@ -84,7 +89,7 @@ function ParticleFilter(
 )
     ## Checks before algorithm is initiated
     ArgCheck.@argcheck hasmethod(dynamics, Tuple{typeof(objective)}) "No Filter dynamics given your objective exists - assign dynamics(objective::Objective{MyModel})"
-    @unpack weighting, resampling, referencing, coverage, threshold, ancestortype, TunedModel = default
+    @unpack weighting, resampling, referencing, coverage, threshold, ancestortype, TunedModel, generated = default
     @unpack model, data, tagged = objective
     ## Assign model dynamics
     kernel = ModelWrappers.dynamics(objective)
@@ -107,6 +112,7 @@ function ParticleFilter(
         ParticleFilterConfig(data, reference),
         BaytesCore.ChainsTune(coverage, threshold, Nparticles, Ndata),
         memory,
+        generated,
         Iterator(1),
     )
     ## Create Particles container
@@ -155,6 +161,7 @@ function propose(
         pf.particles.ℓobjective.current,
         pf.tune.chains.Nchains,
         mean(pf.particles.buffer.resampled),
+        ModelWrappers.generate(_rng, objective, pf.tune.generated)
     )
     ## Update model parameter with reference trajectory
     ModelWrappers.fill!(
@@ -304,6 +311,7 @@ function propagate!(
         pf.particles.ℓobjective.current,
         pf.tune.chains.Nchains,
         mean(pf.particles.buffer.resampled),
+        ModelWrappers.generate(_rng, objective, pf.tune.generated)
     )
     return model.val, diagnostics
 end

@@ -42,7 +42,10 @@ Holds tuning information for Particle Filter.
 $(TYPEDFIELDS)
 """
 struct ParticleFilterTune{
-    T<:Tagged,A<:BaytesCore.ParameterWeighting,B<:BaytesCore.ResamplingMethod,C<:ParticleReferencing,D,E,F,G
+    T<:Tagged,
+    A<:BaytesCore.ParameterWeighting,B<:BaytesCore.ResamplingMethod,C<:ParticleReferencing,
+    D,E,F,G,
+    U<:BaytesCore.UpdateBool
 } <: AbstractTune
     "Tagged Model parameter."
     tagged::T
@@ -58,6 +61,8 @@ struct ParticleFilterTune{
     chains::BaytesCore.ChainsTune
     "Memory for latent and observed data."
     memory::ParticleFilterMemory
+    "Boolean if generated quantities should be generated while sampling"
+    generated::U
     "Current iteration."
     iter::Iterator
     function ParticleFilterTune(
@@ -68,6 +73,7 @@ struct ParticleFilterTune{
         config::ParticleFilterConfig{D,E,F,G},
         chains::BaytesCore.ChainsTune,
         memory::ParticleFilterMemory,
+        generated::U,
         iter::Iterator,
     ) where {
         O<:Objective,
@@ -78,8 +84,9 @@ struct ParticleFilterTune{
         E,
         F,
         G,
+        U<:BaytesCore.UpdateBool
     }
-        return new{typeof(objective.tagged),A,B,C,D,E,F,G}(
+        return new{typeof(objective.tagged),A,B,C,D,E,F,G,U}(
             objective.tagged,
             weighting,
             resampling,
@@ -87,6 +94,7 @@ struct ParticleFilterTune{
             config,
             chains,
             memory,
+            generated,
             iter,
         )
     end

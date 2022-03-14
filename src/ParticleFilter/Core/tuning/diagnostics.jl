@@ -8,7 +8,7 @@ Contains information about log-likelihood, expected sample size and proposal tra
 ```
 
 """
-struct ParticleFilterDiagnostics{P} <: AbstractDiagnostics
+struct ParticleFilterDiagnostics{P,G} <: AbstractDiagnostics
     "Diagnostics used for all Baytes kernels"
     base::BaytesCore.BaseDiagnostics{P}
     "Incremental log objective at current iteration."
@@ -17,13 +17,16 @@ struct ParticleFilterDiagnostics{P} <: AbstractDiagnostics
     Nparticles::Int64
     "Average number of resampling steps."
     resampled::Float64
+    "Generated quantities specified for objective"
+    generated::G
     function ParticleFilterDiagnostics(
         base::BaytesCore.BaseDiagnostics{P},
         ℓincrement::Float64,
         Nparticles::Int64,
-        resampled::Float64
-    ) where {P}
-        return new{P}(base, ℓincrement, Nparticles, resampled)
+        resampled::Float64,
+        generated::G,
+    ) where {P, G}
+        return new{P, G}(base, ℓincrement, Nparticles, resampled, generated)
     end
 end
 

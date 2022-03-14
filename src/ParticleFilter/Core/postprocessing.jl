@@ -58,7 +58,8 @@ function infer(
 ) where {D}
     #TTemperature = model.info.flattendefault.output
     TPrediction = infer(_rng, pf, model, data)
-    return ParticleFilterDiagnostics{TPrediction}
+    TGenerated = infer_generated(_rng, pf, model, data)
+    return ParticleFilterDiagnostics{TPrediction, TGenerated}
 end
 
 """
@@ -78,6 +79,22 @@ function infer(
     ## Chose first available iterations where we can predict
     iter = max(pf.tune.memory) + 1
     return typeof(predict(_rng, trajectory, pf.particles.kernel, reference, iter))
+end
+
+"""
+$(SIGNATURES)
+Infer type of generated quantities of PF sampler.
+
+# Examples
+```julia
+```
+
+"""
+function infer_generated(
+    _rng::Random.AbstractRNG, pf::ParticleFilter, model::ModelWrapper, data::D
+) where {D}
+    objective = Objective(model, data, pf.tune.tagged)
+    return typeof(generate(_rng, objective, pf.tune.generated))
 end
 
 """

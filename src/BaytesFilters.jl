@@ -17,7 +17,6 @@ import BaytesCore:
     propagate!,
     result!,
     get_result,
-#    get_ℓweight,
     generate_showvalues,
     ParameterWeighting,
     ResamplingMethod,
@@ -60,7 +59,7 @@ using BaytesCore:
 
 import ModelWrappers: ModelWrappers, predict, dynamics
 using ModelWrappers:
-    ModelWrappers, ModelWrapper, Tagged, Objective, DiffObjective, ℓObjectiveResult
+    ModelWrappers, ModelWrapper, Tagged, Objective, DiffObjective, ℓObjectiveResult, generate
 
 import Base: max, push!, resize!
 import Random: Random, rand!
