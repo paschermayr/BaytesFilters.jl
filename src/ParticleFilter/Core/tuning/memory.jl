@@ -13,10 +13,13 @@ struct ParticleFilterMemory
     latent::Int64
     "Observed data memory. First particle weighting taken at this point."
     data::Int64
-    function ParticleFilterMemory(latent::Int64, data::Int64)
+    "Number of times when sampled from initial distribution. Per default equal to latent."
+    initial::Int64
+    function ParticleFilterMemory(latent::Int64, data::Int64, initial::Int64)
         ArgCheck.@argcheck latent >= 0 "Latent memory cannot be negative."
         ArgCheck.@argcheck data >= 0 "Data memory cannot be negative."
-        return new(latent, data)
+        ArgCheck.@argcheck initial >= 0 "initial number of sampling steps cannot be negative."
+        return new(latent, data, initial)
     end
 end
 
@@ -38,7 +41,7 @@ function propagate(
     _rng, kernel::ParticleKernel, memory::ParticleFilterMemory, reference::AbstractArray{P}
 ) where {P}
     trajectory = Vector{P}(undef, size(reference, 1))
-    Ninitial = max(1, memory.latent)
+    Ninitial = memory.initial #max(1, memory.latent)
     ## Initialize particle
     for iter in 1:Ninitial
         trajectory[iter] = initial(_rng, kernel)
@@ -110,7 +113,13 @@ function _guessmemory(
     ArgCheck.@argcheck isa(Mparticle, Integer) "Could not determine particle dependency - check kernel.transition in dynamics, or consider writing an issue in BaytesFilters."
     ArgCheck.@argcheck isa(Mevidence, Integer) "Could not determine data dependency - check kernel.observation in dynamics, or consider writing an issue in BaytesFilters."
     ## Return ParticleFilterMemory - subtract 1 from memory as iterations start with 1, which would mean memoryless transition.
-    return ParticleFilterMemory(Mparticle - 1, Mevidence - 1)
+    println(
+    "Latent memory set to: ", Mparticle - 1,
+    ". Data memory set to: ", Mevidence - 1,
+    ". Initial distribution sampling steps: ", max(1, Mparticle - 1),
+    ". If either of those is not as intended, you can manually define the memory in the 'ParticleFilterDefault' container as
+    ParticleFilterDefault(; memory = ParticleFilterMemory(latent, data, initial))")
+    return ParticleFilterMemory(Mparticle - 1, Mevidence - 1, max(1, Mparticle - 1))
 end
 
 ################################################################################

@@ -311,7 +311,7 @@ function initial!(
     objective::Objective,
 ) where {P}
     ## Start iterating over initial distributions of particles ~ depends on memory of particles, usually 1
-    for t in 1:max(1, tune.memory.latent)
+    for t in 1:tune.memory.initial #max(1, tune.memory.latent)
         ## Sample from initial distribution
         initial!(_rng, particles, tune)
         ## Update Last particle value based on Particle Filter settings (Marginal/Conditiona/Ancestral)

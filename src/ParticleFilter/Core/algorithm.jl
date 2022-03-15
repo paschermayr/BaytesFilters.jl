@@ -8,12 +8,15 @@ Default arguments for Particle Filter constructor.
 $(TYPEDFIELDS)
 """
 struct ParticleFilterDefault{
+    M<:Union{Nothing, ParticleFilterMemory},
     A<:BaytesCore.ParameterWeighting,
     B<:BaytesCore.ResamplingMethod,
     C<:ParticleReferencing,
     T<:Integer,
     U<:BaytesCore.UpdateBool
 }
+    "Memory for particles and data."
+    memory::M
     "Weighting Methods for particles."
     weighting::A
     "Resampling methods for particle trajectories."
@@ -31,6 +34,7 @@ struct ParticleFilterDefault{
     "Boolean if generate(_rng, objective) for corresponding model is stored in PF Diagnostics."
     generated::U
     function ParticleFilterDefault(;
+        memory::M=nothing,
         weighting::A=Bootstrap(),
         resampling::B=Systematic(),
         referencing::C=Marginal(),
@@ -40,6 +44,7 @@ struct ParticleFilterDefault{
         TunedModel=true,
         generated=BaytesCore.UpdateFalse()
     ) where {
+        M<:Union{Nothing, ParticleFilterMemory},
         A<:BaytesCore.ParameterWeighting,
         B<:BaytesCore.ResamplingMethod,
         C<:ParticleReferencing,
@@ -47,7 +52,8 @@ struct ParticleFilterDefault{
     }
         ArgCheck.@argcheck 0.0 < coverage
         ArgCheck.@argcheck 0.0 <= threshold <= 1.0
-        return new{A,B,C,T,typeof(generated)}(
+        return new{M,A,B,C,T,typeof(generated)}(
+            memory,
             weighting,
             resampling,
             referencing,
@@ -89,14 +95,15 @@ function ParticleFilter(
 )
     ## Checks before algorithm is initiated
     ArgCheck.@argcheck hasmethod(dynamics, Tuple{typeof(objective)}) "No Filter dynamics given your objective exists - assign dynamics(objective::Objective{MyModel})"
-    @unpack weighting, resampling, referencing, coverage, threshold, ancestortype, TunedModel, generated = default
+    @unpack memory, weighting, resampling, referencing, coverage, threshold, ancestortype, TunedModel, generated = default
     @unpack model, data, tagged = objective
     ## Assign model dynamics
     kernel = ModelWrappers.dynamics(objective)
     ## Initiate a valid reference given model.data and tagged.parameter
     reference = get_reference(referencing, objective)
     ## Guess particle and data memory
-    memory = _guessmemory(_rng, kernel, reference)
+    memory = memory isa ParticleFilterMemory ? memory : _guessmemory(_rng, kernel, reference)
+    ArgCheck.@argcheck memory isa ParticleFilterMemory
     ## Forward sample new reference if TunedModel == false
     if !TunedModel
         reference = propagate(_rng, kernel, memory, reference)
