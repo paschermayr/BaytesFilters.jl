@@ -324,6 +324,10 @@ function initial!(
         #!NOTE: No Resample step at init! for particle ancestors ~ first resampling should happen in propagate!() before particle propagation starts
         ## Update current iteration
         update!(tune.iter)
+        ## Assign default order to ancestors
+        @inbounds for Nrow in Base.OneTo(length(particles.buffer.parameter.val))
+            particles.ancestor[Nrow, t] = Nrow
+        end
     end
     return nothing
 end
