@@ -153,62 +153,71 @@ function get_reference!(
     _rng::Random.AbstractRNG,
     referencing::Marginal,
     ancestor::AbstractVector{I},
-    weights::BaytesCore.ParameterWeights,
-    referenceₜ::Union{P,AbstractArray{P}},
-    kernel::ParticleKernel,
-    val::AbstractArray,
-    iter::Integer,
-) where {I<:Integer,P}
-    return nothing
-end
-function get_reference!(
-    _rng::Random.AbstractRNG,
-    referencing::Conditional,
-    ancestor::AbstractVector{I},
-    weights::BaytesCore.ParameterWeights,
-    referenceₜ::Union{P,AbstractArray{P}},
-    kernel::ParticleKernel,
-    val::AbstractArray,
-    iter::Integer,
-) where {I<:Integer,P}
-    ancestor[end] = length(ancestor) #size(val, 1)
-    return nothing
-end
-function get_reference!(
-    _rng::Random.AbstractRNG,
-    referencing::Ancestral,
-    ancestor::AbstractVector{I},
-    weights::BaytesCore.ParameterWeights,
-    referenceₜ::Union{P,AbstractArray{P}},
-    kernel::ParticleKernel,
-    val::AbstractArray,
-    iter::Integer,
-) where {I<:Integer,P}
-    #!NOTE: Weights.buffer already exp.(weightsₙ) during BaytesCore.issmaller( BaytesCore.computeESS(particles.weights), X) in previous step
-    ancestor[end] = sample_ancestor(_rng, weights, referenceₜ, kernel, val, iter)
+    particles::F,
+    tune::ParticleFilterTune,
+    reference::Union{P,AbstractArray{P}}
+) where {I<:Integer, F<:AbstractParticles, P}
     return nothing
 end
 
 function get_reference!(
     _rng::Random.AbstractRNG,
-    referencing,
+    referencing::Conditional,
+    ancestor::AbstractVector{I},
+    particles::F,
+    tune::ParticleFilterTune,
+    reference::Union{P,AbstractArray{P}}
+) where {I<:Integer, F<:AbstractParticles, P}
+    ancestor[end] = length(ancestor)
+    return nothing
+end
+
+function get_reference!(
+    _rng::Random.AbstractRNG,
+    referencing::Ancestral,
+    ancestor::AbstractVector{I},
+    particles::F,
+    tune::ParticleFilterTune,
+    reference::Union{P,AbstractArray{P}}
+) where {I<:Integer, F<:AbstractParticles, P}
+    referenceₜ = BaytesCore.grab(reference, tune.iter.current, tune.config.particle)
+    #!NOTE: Weights.buffer already exp.(weightsₙ) during BaytesCore.issmaller( BaytesCore.computeESS(particles.weights), X) in previous step
+    ancestor[end] = sample_ancestor(
+        _rng,
+        particles.weights,
+        referenceₜ,
+        particles.kernel,
+        particles.val,
+        tune.iter.current
+    )
+    return nothing
+end
+
+#!NOTE: If buffer is a matrix, reference will be assigned at iter-1 within function, but input here is iter as we grab data for forward looking ancestral step.
+function get_reference!(
+    _rng::Random.AbstractRNG,
+    referencing::R,
     ancestor::AbstractMatrix{I},
-    weights::BaytesCore.ParameterWeights,
-    referenceₜ::Union{P,AbstractArray{P}},
-    kernel::ParticleKernel,
-    val::AbstractArray,
-    iter::Integer,
-) where {I<:Integer,P}
+    particles::F,
+    tune::ParticleFilterTune,
+    reference::Union{P,AbstractArray{P}}
+) where {R<:ParticleReferencing, I<:Integer, F<:AbstractParticles, P}
     return get_reference!(
         _rng,
         referencing,
-        view(ancestor, :, iter - 1),
-        weights,
-        referenceₜ,
-        kernel,
-        val,
-        iter,
+        view(ancestor, :, tune.iter.current - 1),
+        particles,
+        tune,
+        reference
     )
+end
+function get_reference!(
+    _rng::Random.AbstractRNG,
+    particles::F,
+    tune::ParticleFilterTune,
+    reference::Union{P,AbstractArray{P}}
+) where {F<:AbstractParticles, P}
+    return get_reference!(_rng, tune.referencing, particles.ancestor, particles, tune, reference)
 end
 
 ############################################################################################

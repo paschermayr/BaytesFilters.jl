@@ -7,7 +7,7 @@ Contains Particle container for propagation.
 # Fields
 $(TYPEDFIELDS)
 """
-mutable struct Particles{P<:ParticleKernel,B,I<:Integer}
+mutable struct Particles{P<:ParticleKernel,B,I<:Integer} <: AbstractParticles
     "Particle trajectories, for a discussion about possible shapes for the trajectories."
     #=
     Field that hold Nparticles Ndata times, CRITERIA:
@@ -109,25 +109,6 @@ function ancestors!(
         tune.iter.current - 1,
         tune.chains.Nchains,
         particles.weights.buffer,
-    )
-end
-#!NOTE: If buffer is a matrix, reference will be assigned at iter-1 within function, but input here is iter as we grab data for forward looking ancestral step.
-function get_reference!(
-    _rng::Random.AbstractRNG,
-    particles::Particles,
-    tune::ParticleFilterTune,
-    reference::AbstractArray{P},
-    ancestor=particles.ancestor,
-) where {P}
-    return get_reference!(
-        _rng,
-        tune.referencing,
-        ancestor,
-        particles.weights,
-        BaytesCore.grab(reference, tune.iter.current, tune.config.particle),
-        particles.kernel,
-        particles.val,
-        tune.iter.current,
     )
 end
 #!NOTE: This step is AFTER resample!() [ancestors!/get_reference!] during particle propagation hence tune.iter.current is used

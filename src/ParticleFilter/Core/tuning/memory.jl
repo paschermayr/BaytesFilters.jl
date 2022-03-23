@@ -113,12 +113,14 @@ function _guessmemory(
     ArgCheck.@argcheck isa(Mparticle, Integer) "Could not determine particle dependency - check kernel.transition in dynamics, or consider writing an issue in BaytesFilters."
     ArgCheck.@argcheck isa(Mevidence, Integer) "Could not determine data dependency - check kernel.observation in dynamics, or consider writing an issue in BaytesFilters."
     ## Return ParticleFilterMemory - subtract 1 from memory as iterations start with 1, which would mean memoryless transition.
+    #=
     println(
     "Latent memory set to: ", Mparticle - 1,
     ". Data memory set to: ", Mevidence - 1,
     ". Initial distribution sampling steps: ", max(1, Mparticle - 1),
     ". If either of those is not as intended, you can manually define the memory in the 'ParticleFilterDefault' container as
     ParticleFilterDefault(; memory = ParticleFilterMemory(latent, data, initial))")
+    =#
     return ParticleFilterMemory(Mparticle - 1, Mevidence - 1, max(1, Mparticle - 1))
 end
 

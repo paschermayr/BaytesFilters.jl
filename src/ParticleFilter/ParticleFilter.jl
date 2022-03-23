@@ -12,6 +12,12 @@ Super type for various particle referencing techniques.
 """
 abstract type ParticleReferencing end
 
+"""
+$(TYPEDEF)
+Super type for various particle referencing techniques.
+"""
+abstract type AbstractParticles end
+
 ############################################################################################
 # Import sub-folder
 include("Core/Core.jl")
@@ -27,4 +33,5 @@ export update!,
     propagate!,
     predict,
     ParticleKernel,
-    ParticleReferencing
+    ParticleReferencing,
+    AbstractParticles
