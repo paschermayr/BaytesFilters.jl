@@ -163,7 +163,9 @@ end
 function predict(_rng::Random.AbstractRNG, pf::ParticleFilter, objective::Objective)
     #return pf.particles.buffer.prediction[1]
     path = BaytesCore.draw!(_rng, pf.particles.weights)
-    reference = get_reference(pf.tune.referencing, objective)
+    reference = get_reference(pf.tune.referencing,
+        Objective(objective.model, objective.data, pf.tune.tagged, objective.temperature)
+    ) #objective)
     return predict(_rng, pf.particles, pf.tune, reference, path)
 end
 
