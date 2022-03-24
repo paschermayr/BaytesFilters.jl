@@ -71,15 +71,24 @@ Infer type of predictions of kernel.
 ```
 
 """
+function infer(_rng::Random.AbstractRNG,
+    tune::ParticleFilterTune,
+    kernel::ParticleKernel,
+    model::ModelWrapper,
+    data::D
+) where {D}
+    reference = get_reference(tune.referencing, model, data, tune.tagged)
+    trajectory = propagate(_rng, kernel, tune.memory, reference)
+    ## Chose first available iterations where we can predict
+    iter = max(tune.memory) + 1
+    return typeof(predict(_rng, trajectory, kernel, reference, iter))
+end
 function infer(
     _rng::Random.AbstractRNG, pf::ParticleFilter, model::ModelWrapper, data::D
 ) where {D}
-    reference = get_reference(pf.tune.referencing, model, data, pf.tune.tagged)
-    trajectory = propagate(_rng, pf.particles.kernel, pf.tune.memory, reference)
-    ## Chose first available iterations where we can predict
-    iter = max(pf.tune.memory) + 1
-    return typeof(predict(_rng, trajectory, pf.particles.kernel, reference, iter))
+    return infer(_rng, pf.tune, pf.particles.kernel, model, data)
 end
+
 
 """
 $(SIGNATURES)
@@ -151,11 +160,13 @@ end
 function get_result(pf::ParticleFilter)
     return error("Not implemented for ParticleFilter.")
 end
-#=
-function get_ℓweight(pf::ParticleFilter)
-    return pf.particles.ℓℒ.cumulative
+function predict(_rng::Random.AbstractRNG, pf::ParticleFilter, objective::Objective)
+    #return pf.particles.buffer.prediction[1]
+    path = BaytesCore.draw!(_rng, pf.particles.weights)
+    reference = get_reference(pf.tune.referencing, objective)
+    return predict(_rng, pf.particles, pf.tune, reference, path)
 end
-=#
+
 ############################################################################################
 #export
 export ParticleFilterConstructor, infer

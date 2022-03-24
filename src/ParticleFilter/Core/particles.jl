@@ -7,7 +7,7 @@ Contains Particle container for propagation.
 # Fields
 $(TYPEDFIELDS)
 """
-mutable struct Particles{P<:ParticleKernel,B,I<:Integer} <: AbstractParticles
+mutable struct Particles{R,P<:ParticleKernel,B,I<:Integer} <: AbstractParticles
     "Particle trajectories, for a discussion about possible shapes for the trajectories."
     #=
     Field that hold Nparticles Ndata times, CRITERIA:
@@ -32,16 +32,17 @@ mutable struct Particles{P<:ParticleKernel,B,I<:Integer} <: AbstractParticles
     "Particle weights."
     weights::BaytesCore.ParameterWeights
     "Necessary buffer values for resampling particles."
-    buffer::ParticleBuffer{B,I}
+    buffer::ParticleBuffer{B,I,R}
     "Log likelihood estimate."
     ℓobjective::Accumulator
     function Particles(
         reference::AbstractArray{T},
+        prediction::Vector{R},
         kernel::P,
         ancestortype::Type{I},
         Nparticles::Integer,
         Ndata::Integer
-    ) where {T,P<:ParticleKernel,I<:Integer}
+    ) where {T,R,P<:ParticleKernel,I<:Integer}
         ## Create val
         val = ElasticMatrix{T}(undef, Nparticles, Ndata)
         ## Create ancestors - switch Nparticles, Ndata for easier access in resampling step
@@ -49,9 +50,9 @@ mutable struct Particles{P<:ParticleKernel,B,I<:Integer} <: AbstractParticles
         ## Create initial weights
         weights = BaytesCore.ParameterWeights(Nparticles)
         ## Create buffer
-        buffer = ParticleBuffer(reference, Nparticles, Ndata, ancestortype)
+        buffer = ParticleBuffer(prediction, reference, Nparticles, Ndata, ancestortype)
         ## Return Particles
-        return new{P,T,I}(val, ancestor, kernel, weights, buffer, Accumulator())
+        return new{R,P,T,I}(val, ancestor, kernel, weights, buffer, Accumulator())
     end
 end
 

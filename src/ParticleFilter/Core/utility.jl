@@ -7,20 +7,22 @@ Contains temporary buffer values to avoid allocations during particle propagatio
 # Fields
 $(TYPEDFIELDS)
 """
-struct ParticleBuffer{A,I}
+struct ParticleBuffer{A,I,P}
     "Contains buffer values for particles and ancestor for one iteration."
     parameter::BaytesCore.ParameterBuffer{A, I}
     "Proposal trajectory and predicted latent variable."
     proposal::Vector{A}
+    "Predicted latent and oberved data"
+    prediction::Vector{P}
     "Stores boolean if resampled at each iteration."
     resampled::Vector{Bool}
     function ParticleBuffer(
-        reference::AbstractVector{A}, Nparticles::Integer, Ndata::Integer, F::Type{I}
-    ) where {A,I<:Integer}
+        prediction::Vector{P}, reference::AbstractVector{A}, Nparticles::Integer, Ndata::Integer, F::Type{I}
+    ) where {P,A,I<:Integer}
         parameter = BaytesCore.ParameterBuffer(reference, Nparticles, F)
         proposal = typeof(reference)(undef, Ndata)
         resampled = zeros(Bool, Ndata)
-        return new{A,I}(parameter, proposal, resampled)
+        return new{A,I,P}(parameter, proposal, prediction, resampled)
     end
 end
 function update!(buffer::ParticleBuffer, Nparticles::Integer, Ndata::Integer)

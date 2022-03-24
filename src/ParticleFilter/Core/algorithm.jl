@@ -122,8 +122,11 @@ function ParticleFilter(
         generated,
         Iterator(1),
     )
+    ## Prediction buffer
+    Tprediction = infer(_rng, tune, kernel, model, data)
+    prediction_buffer = Vector{Tprediction}(undef, 1)
     ## Create Particles container
-    particles = Particles(reference, kernel, ancestortype, Nparticles, Ndata)
+    particles = Particles(reference, prediction_buffer, kernel, ancestortype, Nparticles, Ndata)
     ## Return Particle filter
     return ParticleFilter(particles, tune)
 end
@@ -154,9 +157,9 @@ function propose(
     ## Sort all particles back into correct order
     BaytesCore.shuffle_backward!(pf.particles, pf.tune)
     ## Draw proposal path, update proposal with corresponding path and predict future state
-    path = BaytesCore.draw!(_rng, pf.particles.weights) #pf.particles, pf.tune)
-    #	assign!(pf.particles.buffer.proposal, pf.particles.val[path], pf.tune.iter.current-1)
+    path = BaytesCore.draw!(_rng, pf.particles.weights)
     prediction = predict(_rng, pf.particles, pf.tune, reference, path)
+    pf.particles.buffer.prediction[1] = prediction
     ## Create Diagnostics and return output
     diagnostics = ParticleFilterDiagnostics(
         BaytesCore.BaseDiagnostics(
@@ -307,6 +310,7 @@ function propagate!(
     BaytesCore.shuffle_backward!(pf.particles, pf.tune)
     ## Predict new state and observation
     prediction = predict(_rng, pf.particles, pf.tune, reference, path)
+    pf.particles.buffer.prediction[1] = prediction
     ## Create Diagnostics and return output
     diagnostics = ParticleFilterDiagnostics(
         BaytesCore.BaseDiagnostics(
