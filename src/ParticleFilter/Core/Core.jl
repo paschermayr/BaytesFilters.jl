@@ -6,10 +6,10 @@ include("utility.jl")
 include("tuning/tuning.jl")
 include("trajectories/trajectories.jl")
 
-#include("history.jl")
 include("particles.jl")
 include("algorithm.jl")
 include("postprocessing.jl")
+include("inference.jl")
 
 ############################################################################################
 #export
