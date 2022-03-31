@@ -5,8 +5,8 @@ objectives = [deepcopy(markov_objective), deepcopy(semimarkov_objective)]
 resamplemethods = [Systematic(), Residual(), Stratified(), BaytesFilters.Multinomial()]
 referencemethods = [Conditional(), Ancestral(), Marginal()]
 
-
-## Make model
+############################################################################################
+# Proposal steps and post processing
 for iter in eachindex(objectives)
     @testset "Kernel construction and propose, all models" begin
         ## Resampling methods
@@ -31,14 +31,22 @@ for iter in eachindex(objectives)
                     _obj,
                     pfdefault
                 )
-                propose(_rng, pfkernel, _obj)
+                _val, _diag = propose(_rng, pfkernel, _obj)
                 @test size(pfkernel.particles.val, 2) == length(_obj.data)
+                ## Postprocessing
+                BaytesFilters.generate_showvalues(_diag)()
+                @test _diag isa infer(_rng, BaytesFilters.AbstractDiagnostics, pfkernel, _obj.model, _obj.data)
+                @test _diag.base.prediction isa infer(_rng, pfkernel.tune, pfkernel.particles.kernel, _obj.model, _obj.data)
+                @test _diag.base.prediction isa infer(_rng, pfkernel, _obj.model, _obj.data)
+                @test _diag.generated isa BaytesFilters.infer_generated(_rng, pfkernel, _obj.model, _obj.data)
+                @test predict(_rng, pfkernel, _obj) isa typeof(_diag.base.prediction)
             end
         end
     end
 end
 
-
+############################################################################################
+# Propagation steps
 for iter in eachindex(objectives)
     @testset "Kernel propagation, all models" begin
         data2 = randn(length(objectives[iter].data)+10)
