@@ -32,7 +32,7 @@ for iter in eachindex(objectives)
             end
             ℓobjective_approx = [diags[idx].base.ℓobjective for idx in eachindex(diags)]
             _, ℓobjective_exact = filter_forward(_obj)
-            @test ℓobjective_exact ≈ mean(ℓobjective_approx) atol = 20.0 #!NOTE: Initial distribution slightly different in forward filter for HSMM, rest should be atol ~ 1.0
+            @test ℓobjective_exact ≈ mean(ℓobjective_approx) atol = 50.0 #!NOTE: Initial distribution slightly different in forward filter for HSMM, rest should be atol ~ 1.0
         end
     end
 end
