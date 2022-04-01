@@ -1,11 +1,4 @@
 ############################################################################################
-# Models to be used in construction
-objectives = [deepcopy(markov_objective), deepcopy(semimarkov_objective)]
-
-resamplemethods = [Systematic(), Residual(), Stratified(), BaytesFilters.Multinomial()]
-referencemethods = [Conditional(), Ancestral(), Marginal()]
-
-############################################################################################
 # Proposal steps and post processing
 for iter in eachindex(objectives)
     @testset "Kernel construction and propose, all models" begin
@@ -33,12 +26,22 @@ for iter in eachindex(objectives)
                 )
                 _val, _diag = propose(_rng, pfkernel, _obj)
                 @test size(pfkernel.particles.val, 2) == length(_obj.data)
+                ## Check if all particles are correct ~ Easy to check for Semi-Markov particles
+                if _obj.model.id isa HSMM
+                    @test check_correctness(pfkernel.particles.kernel, pfkernel.particles.val) == 0
+                end
+                ## Check if all ancestors are correct
+                check_ancestors(pfkernel.particles.ancestor)
                 ## Postprocessing
                 BaytesFilters.generate_showvalues(_diag)()
-                @test _diag isa infer(_rng, BaytesFilters.AbstractDiagnostics, pfkernel, _obj.model, _obj.data)
-                @test _diag.base.prediction isa infer(_rng, pfkernel.tune, pfkernel.particles.kernel, _obj.model, _obj.data)
-                @test _diag.base.prediction isa infer(_rng, pfkernel, _obj.model, _obj.data)
-                @test _diag.generated isa BaytesFilters.infer_generated(_rng, pfkernel, _obj.model, _obj.data)
+                _type = infer(_rng, BaytesFilters.AbstractDiagnostics, pfkernel, _obj.model, _obj.data)
+                @test _diag isa _type
+                _type = infer(_rng, pfkernel.tune, pfkernel.particles.kernel, _obj.model, _obj.data)
+                @test _diag.base.prediction isa _type
+                _type = infer(_rng, pfkernel, _obj.model, _obj.data)
+                @test _diag.base.prediction isa _type
+                _type = BaytesFilters.infer_generated(_rng, pfkernel, _obj.model, _obj.data)
+                @test _diag.generated isa _type
                 @test predict(_rng, pfkernel, _obj) isa typeof(_diag.base.prediction)
             end
         end

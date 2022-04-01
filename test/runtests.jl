@@ -8,11 +8,11 @@ using Distributions
 
 ############################################################################################
 # Import Baytes Packages
-using ModelWrappers, BaytesFilters
+using BaytesCore, ModelWrappers, BaytesFilters
 
 ############################################################################################
 # Include Files
-include("TestHelper.jl")
+include("testhelper/TestHelper.jl");
 
 ############################################################################################
 # Run Tests
@@ -21,6 +21,7 @@ include("TestHelper.jl")
     include("test-memory.jl")
     # PF specific
     include("particlefilter/test-construction.jl")
+    include("particlefilter/test-estimate.jl")
     include("particlefilter/test-types.jl")
     include("particlefilter/test-ancestors.jl")
     include("particlefilter/test-Ndata.jl")

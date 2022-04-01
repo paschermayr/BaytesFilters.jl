@@ -8,7 +8,6 @@ Function that checks for number of particles to achieve target variance of log t
 ```
 
 """
-
 function estimate_Nparticles(
     _rng::Random.AbstractRNG,
     pf::ParticleFilterConstructor,
@@ -17,7 +16,8 @@ function estimate_Nparticles(
     Nchains::Int64 = Threads.nthreads(),
     margin::Float64 = 0.25,
     itermax::Int64 = 100,
-    mincoverage::Float64 = 0.01
+    mincoverage::Float64 = 0.01,
+    printoutput = true
 )
     ArgCheck.@argcheck Nchains > 0
     ArgCheck.@argcheck margin > 0
@@ -62,19 +62,22 @@ function estimate_Nparticles(
             algorithms[chain].tune.chains.coverage = Ncoverage[iter]
         end
     ## Print current run diagnostics
-    println(
-        "(Target variance ", variance,
-        ", Iteration ", iter,
-        ") - Coverage set to ", round(Ncoverage[iter]; digits=3),
-        " for variance of ", round(ℓobjective_variance[iter]; digits=2), "."
-        #". Number of particles: ", size(algorithms[1].particles.val, 1)
-    )
+        if printoutput
+            println(
+                "(Target variance ", variance,
+                ", Iteration ", iter,
+                ") - Coverage set to ", round(Ncoverage[iter]; digits=3),
+                " for variance of ", round(ℓobjective_variance[iter]; digits=2), "."
+            )
+        end
     end
     ## Return Nparticles
     return (
         Coverage = Ncoverage,
         ℓobjective_variance = ℓobjective_variance,
-        ℓobjective = ℓobjective
+        ℓobjective = ℓobjective,
+        itermax = iter,
+        variance = variance
         )
 end
 
