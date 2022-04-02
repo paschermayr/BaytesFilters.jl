@@ -54,28 +54,36 @@ end
 ############################################################################################
 # Propagation steps
 for iter in eachindex(objectives)
+    Ndata_extension = [1, 10]
     @testset "Kernel propagation, all models" begin
-        data2 = vcat(objectives[iter].data, objectives[iter].data[1:10]) #randn(length(objectives[iter].data)+10)
-        ## Resampling methods
-        for _resample in resamplemethods
-            ## Referencing methods
-            _reference = Marginal()
-            _obj = deepcopy(objectives[iter])
-            ## Define PF default tuning parameter
-            pfdefault = ParticleFilterDefault(;
-                referencing = _reference,
-                resampling = _resample
-            )
-            ## Initialize kernel and check if it can be run
-            pfkernel = ParticleFilter(
-                _rng,
-                _obj,
-                pfdefault
-            )
-            propose(_rng, pfkernel, _obj)
-            ## Propagate forward
-            propagate!(_rng, pfkernel, _obj.model, data2)
-            @test size(pfkernel.particles.val, 2) == length(data2)
+        for newdata in Ndata_extension
+        # First extend 1 data point, then 10
+            # -> once PF will only extend Ndata, then Nparticles and Ndata
+            data2 = vcat(objectives[iter].data, objectives[iter].data[1:newdata]) #randn(length(objectives[iter].data)+10)
+            ## Resampling methods
+            for _resample in resamplemethods
+                ## Referencing methods
+                _reference = Marginal()
+                _obj = deepcopy(objectives[iter])
+                ## Define PF default tuning parameter
+                pfdefault = ParticleFilterDefault(;
+                    coverage = .5,
+                    referencing = _reference,
+                    resampling = _resample
+                )
+                ## Initialize kernel and check if it can be run
+                pfkernel = ParticleFilter(
+                    _rng,
+                    _obj,
+                    pfdefault
+                )
+                propose(_rng, pfkernel, _obj)
+                ## Propagate forward
+                propagate!(_rng, pfkernel, _obj.model, data2)
+                @test size(pfkernel.particles.val, 2) == length(data2)
+                ## Check if Nparticles change accordingly
+                propose!(_rng, pfkernel, _obj.model, data2)
+            end
         end
     end
 end

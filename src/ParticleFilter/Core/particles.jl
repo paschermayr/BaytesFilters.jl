@@ -135,10 +135,11 @@ function shuffle_backward!(particles::Particles, tune::ParticleFilterTune)
         particles.val, particles.buffer.parameter.val, particles.ancestor, particles.buffer.parameter.index
     )
 end
+#=
 function shuffle!(particles::Particles)
     return shuffle!(particles.val, particles.buffer.parameter.val, particles.buffer.parameter.index)
 end
-
+=#
 ############################################################################################
 """
 $(SIGNATURES)
