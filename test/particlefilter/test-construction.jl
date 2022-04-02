@@ -81,8 +81,16 @@ for iter in eachindex(objectives)
                 ## Propagate forward
                 propagate!(_rng, pfkernel, _obj.model, data2)
                 @test size(pfkernel.particles.val, 2) == length(data2)
-                ## Check if Nparticles change accordingly
                 propose!(_rng, pfkernel, _obj.model, data2)
+                ## Check if Nparticles change for more data accordingly even if not propagated
+                pfkernel2 = ParticleFilter(
+                    _rng,
+                    _obj,
+                    pfdefault
+                )
+                propose!(_rng, pfkernel2, deepcopy(objectives[iter].model), data2)
+                ## Check if Nparticles change for less data accordingly even if not propagated
+                propose!(_rng, pfkernel2, deepcopy(objectives[iter].model), data2[1:Int(round(length(data2)/2))])
             end
         end
     end
