@@ -66,9 +66,9 @@ end
 get_stationary(Transition::AbstractMatrix{T}) where {T<:Real} = get_stationary!(copy(Transition))
 
 ############################################################################################
-"Check if ancestors are all in correct order"
+"Check if ancestors are all in correct order - Not that first column can have different order as ancestors not resampled at 0."
 function check_ancestors(ancestors::AbstractMatrix{I}) where {I<:Integer}
-    for Ncol in Base.OneTo(size(ancestors, 2))
+    for Ncol in 2:size(ancestors, 2)
         for Nrow in Base.OneTo(size(ancestors, 1))
             if ancestors[Nrow, Ncol] != Nrow
                 return false
@@ -80,10 +80,11 @@ end
 
 ############################################################################################
 include("hmm.jl")
+include("hmmMV.jl")
 include("hsmm.jl")
 include("HigherOrderMarkov.jl")
 
 ############################################################################################
 resamplemethods = [Systematic(), Residual(), Stratified(), BaytesFilters.Multinomial()]
 referencemethods = [Conditional(), Ancestral(), Marginal()]
-objectives = [deepcopy(markov_objective), deepcopy(semimarkov_objective)]
+objectives = [deepcopy(markov_objective), deepcopy(markov_MV_objective), deepcopy(semimarkov_objective)]

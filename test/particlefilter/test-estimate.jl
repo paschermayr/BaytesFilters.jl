@@ -5,7 +5,7 @@ for iter in eachindex(objectives)
         for _resample in resamplemethods
             _obj = deepcopy(objectives[iter])
             ## Sample data given model and create new objective
-            dat, lat = simulate(_rng, _obj.model; Nsamples = 1000)
+            dat, lat = simulate(_rng, _obj.model; Nsamples = 500)
             _tagged = Tagged(_obj.model, :latent)
             fill!(_obj.model, _tagged, (; latent = lat))
             _obj = Objective(_obj.model, dat, _tagged)
@@ -33,85 +33,14 @@ for iter in eachindex(objectives)
             ℓobjective_approx = [diags[idx].base.ℓobjective for idx in eachindex(diags)]
             _, ℓobjective_exact = filter_forward(_obj)
             @test ℓobjective_exact ≈ mean(ℓobjective_approx) atol = 50.0 #!NOTE: Initial distribution slightly different in forward filter for HSMM, rest should be atol ~ 1.0
+            #Check for results
+            results(diags, pfkernel, 2, [.1, .2, .5, .8, .9])
         end
     end
 end
 
 ############################################################################################
 # Number of Particle estimate
-function estimate_Nparticles(
-    _rng::Random.AbstractRNG,
-    pf::ParticleFilterConstructor,
-    objective::Objective,
-    variance::AbstractFloat;
-    Nchains::Int64 = Threads.nthreads(),
-    margin::Float64 = 0.25,
-    itermax::Int64 = 100,
-    mincoverage::Float64 = 0.01,
-    printoutput = true
-)
-    ArgCheck.@argcheck Nchains > 0
-    ArgCheck.@argcheck margin > 0
-    ArgCheck.@argcheck itermax > 0
-## Assign all kernels
-    algorithms = map(iter -> pf(_rng, objective.model, objective.data, objective.temperature, SampleDefault()), Base.OneTo(Nchains))
-    models = map(iter -> deepcopy(objective.model), Base.OneTo(Nchains))
-## Preallocate buffer for variance and mean of ℓobjective estimate
-    ℓobjective_variance = zeros(itermax)
-    ℓobjective = zeros(Nchains, itermax)
-    Ncoverage = zeros(itermax)
-    Ncoverage[1] = pf.default.coverage
-    iter = 1
-## Run first test for estimates
-    for chain in Base.OneTo(Nchains)
-        _, diagnostics = propose!(_rng, algorithms[chain], models[chain], objective.data, objective.temperature, UpdateTrue())
-        ℓobjective[chain, iter] = diagnostics.base.ℓobjective
-    end
-    ℓobjective_variance[iter] = var(view(ℓobjective, :, iter))
-    while iter < itermax
-        iter += 1
-    ## Compute variance and mean of ℓobjective estimate
-        Threads.@threads for chain in Base.OneTo(Nchains)
-            _, diagnostics = propose!(_rng, algorithms[chain], models[chain], objective.data, objective.temperature, UpdateTrue())
-            ℓobjective[chain, iter] = diagnostics.base.ℓobjective
-        end
-        ℓobjective_variance[iter] = var(view(ℓobjective, :, iter))
-    ## Check if conditions are fullfilled
-        _margin = ℓobjective_variance[iter]*margin
-        boundaries = (ℓobjective_variance[iter] - _margin, ℓobjective_variance[iter] + _margin)
-        if boundaries[begin] < variance < boundaries[end]
-            break
-        end
-    ## Adjust number of particles
-        if ℓobjective_variance[iter] > variance
-            #Note: Double particles at the beginning and then slowly decrease change over iterations
-            Ncoverage[iter] = Ncoverage[iter-1] + Ncoverage[iter-1] * 2.0/iter
-        else
-            Ncoverage[iter] = max(mincoverage, Ncoverage[iter-1] - Ncoverage[iter-1] * 2.0/iter)
-        end
-        for chain in Base.OneTo(Nchains)
-            algorithms[chain].tune.chains.coverage = Ncoverage[iter]
-        end
-    ## Print current run diagnostics
-        if printoutput
-            println(
-                "(Target variance ", variance,
-                ", Iteration ", iter,
-                ") - Coverage set to ", round(Ncoverage[iter]; digits=3),
-                " for variance of ", round(ℓobjective_variance[iter]; digits=2), "."
-            )
-        end
-    end
-    ## Return Nparticles
-    return (
-        Coverage = Ncoverage,
-        ℓobjective_variance = ℓobjective_variance,
-        ℓobjective = ℓobjective,
-        itermax = iter,
-        variance = variance
-        )
-end
-
 for iter in eachindex(objectives)
     @testset "Number Particle estimation, all models" begin
         ## Resampling methods

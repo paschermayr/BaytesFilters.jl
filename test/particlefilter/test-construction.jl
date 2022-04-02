@@ -1,5 +1,7 @@
 ############################################################################################
 # Proposal steps and post processing
+#_resample = resamplemethods[1]
+#_reference = referencemethods[1]
 for iter in eachindex(objectives)
     @testset "Kernel construction and propose, all models" begin
         ## Resampling methods
@@ -18,6 +20,7 @@ for iter in eachindex(objectives)
                 ## Check if we can initiate from Constructor
                 constructor = ParticleFilterConstructor(:latent, pfdefault)
                 constructor(_rng, _obj.model, _obj.data, 1., SampleDefault())
+                ParticleFilter(:latent)
                 ## Initialize kernel and check if it can be run
                 pfkernel = ParticleFilter(
                     _rng,
@@ -31,7 +34,7 @@ for iter in eachindex(objectives)
                     @test check_correctness(pfkernel.particles.kernel, pfkernel.particles.val) == 0
                 end
                 ## Check if all ancestors are correct
-                check_ancestors(pfkernel.particles.ancestor)
+                @test check_ancestors(pfkernel.particles.ancestor)
                 ## Postprocessing
                 BaytesFilters.generate_showvalues(_diag)()
                 _type = infer(_rng, BaytesFilters.AbstractDiagnostics, pfkernel, _obj.model, _obj.data)
@@ -52,7 +55,7 @@ end
 # Propagation steps
 for iter in eachindex(objectives)
     @testset "Kernel propagation, all models" begin
-        data2 = randn(length(objectives[iter].data)+10)
+        data2 = vcat(objectives[iter].data, objectives[iter].data[1:10]) #randn(length(objectives[iter].data)+10)
         ## Resampling methods
         for _resample in resamplemethods
             ## Referencing methods

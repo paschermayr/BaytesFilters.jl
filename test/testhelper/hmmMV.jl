@@ -1,26 +1,27 @@
 ############################################################################################
 #Markov Kernel
-markov_latent = Int32.(rand(_rng, Distributions.Categorical(3), N))
-markov_data = randn(_rng, Float16, size(markov_latent, 1))
-markov_param = (;
-    μ=Param([-.1, 0.0, 0.1], fill(Normal(0.0, 10), 3)),
-    σ=Param([5.0, 3.0, 2.0], fill(truncated(Normal(3.0, 10.0), 0.0, 10.0), 3)),
-    p=Param(
-        [[0.2, 0.6, 0.2], [0.2, 0.6, 0.2], [0.2, 0.6, 0.2]], [Dirichlet(3, 3) for i in 1:3]
-    ),
-    latent=Param(markov_latent, Fixed()),
+markov_MV_data = [randn(_rng, 2) for _ in 1:N]
+param_HMM_MV = (;
+    μ = Param([[-2., -2.], [0., 0.], [2., 2.]],
+        [MvNormal( [i, i], [1., 1.] ) for i in -1.0:1:1.]),
+    σ = Param([[ 2.2 0.2 ; 0.2 2.2], [ 1.1 0.1 ; 0.1 1.1], [ 2.2 0.2 ; 0.2 2.2] ],
+        [InverseWishart(10, [0.8 0.5 ; 0.5 .8] ) for i in 1:3]),
+    p = Param([[.6, .2, .2],  [.1, .1, .8], [.1, .1, .8]], [Dirichlet(3,3) for i in 1:3]),
+    latent = Param(markov_latent, Fixed()),
 )
-struct HMM <: ModelName end
-hmm = ModelWrapper(HMM(), markov_param)
-markov_objective = Objective(hmm, markov_data, :latent)
+struct HMM_MV <: ModelName end
+hmm_MV = ModelWrapper(HMM_MV(), param_HMM_MV)
+markov_MV_objective = Objective(hmm_MV, markov_MV_data, :latent)
 
-function get_dynamics(model::ModelWrapper{<:HMM}, θ)
+################################################################################
+function get_dynamics(model::ModelWrapper{<:HMM_MV}, θ)
     @unpack μ, σ, p = θ
-    dynamicsᵉ = [Normal(μ[iter], σ[iter]) for iter in eachindex(μ)]
-    dynamicsˢ = [Categorical(p[iter]) for iter in eachindex(μ)]
+    dynamicsᵉ = [ MvNormal(μ[iter], σ[iter]) for iter in eachindex(μ) ]
+    dynamicsˢ = [ Categorical( p[iter] ) for iter in eachindex(μ) ]
     return dynamicsᵉ, dynamicsˢ
 end
-function BaytesFilters.dynamics(objective::Objective{<:ModelWrapper{<:HMM}})
+
+function BaytesFilters.dynamics(objective::Objective{<:ModelWrapper{<:HMM_MV}})
     @unpack model, data = objective
     dynamicsᵉ, dynamicsˢ = get_dynamics(model, model.val)
 
@@ -30,11 +31,11 @@ function BaytesFilters.dynamics(objective::Objective{<:ModelWrapper{<:HMM}})
 
     return Markov(initialˢ, transition, evidence)
 end
-dynamics(markov_objective)
+#dynamics(markov_MV_objective)
 
 ############################################################################################
 "Forward Filter HMM"
-function filter_forward(objective::Objective{<:ModelWrapper{HMM}})
+function filter_forward(objective::Objective{<:ModelWrapper{HMM_MV}})
     @unpack model, data = objective
 ## Map Parameter to observation and state probabilities
     @unpack p = model.val
@@ -82,13 +83,13 @@ function filter_forward(objective::Objective{<:ModelWrapper{HMM}})
     end
     return (α, ℓℒ)
 end
-filter_forward(markov_objective)
+filter_forward(markov_MV_objective)
 
 ############################################################################################
-function ModelWrappers.simulate(rng::Random.AbstractRNG, model::ModelWrapper{HMM}; Nsamples = 1000)
+function ModelWrappers.simulate(rng::Random.AbstractRNG, model::ModelWrapper{HMM_MV}; Nsamples = 1000)
     dynamicsᵉ, dynamicsˢ = get_dynamics(model, model.val)
     latentⁿᵉʷ = Vector{eltype(model.val.latent)}(undef, Nsamples)
-    observedⁿᵉʷ = zeros(Nsamples)
+    observedⁿᵉʷ = [zeros(2) for _ in 1:Nsamples]
 
     stateₜ = rand(rng, dynamicsˢ[ rand(1:length(dynamicsˢ) ) ] )
     latentⁿᵉʷ[1] = stateₜ
