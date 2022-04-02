@@ -67,6 +67,7 @@ for iter in eachindex(objectives)
                 _obj = deepcopy(objectives[iter])
                 ## Define PF default tuning parameter
                 pfdefault = ParticleFilterDefault(;
+                    #!NOTE: So Nparticles does not change if 1 more data point is added
                     coverage = .5,
                     referencing = _reference,
                     resampling = _resample
@@ -88,9 +89,13 @@ for iter in eachindex(objectives)
                     _obj,
                     pfdefault
                 )
+                ChainsInit = pfkernel2.tune.chains.Nchains
+                @test ChainsInit == size(pfkernel2.particles.val,1)
                 propose!(_rng, pfkernel2, deepcopy(objectives[iter].model), data2)
+                @test size(pfkernel2.particles.val,1) <= size(data2,1)*pfkernel2.tune.chains.coverage
                 ## Check if Nparticles change for less data accordingly even if not propagated
                 propose!(_rng, pfkernel2, deepcopy(objectives[iter].model), data2[1:Int(round(length(data2)/2))])
+                @test size(pfkernel2.particles.val,1) <= size(data2[1:Int(round(length(data2)/2))],1)*pfkernel2.tune.chains.coverage
             end
         end
     end
