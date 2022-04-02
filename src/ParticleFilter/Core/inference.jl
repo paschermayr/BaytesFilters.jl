@@ -36,7 +36,7 @@ function estimate_Nparticles(
         _, diagnostics = propose!(_rng, algorithms[chain], models[chain], objective.data, objective.temperature, UpdateTrue())
         ℓobjective[chain, iter] = diagnostics.base.ℓobjective
     end
-    ℓobjective_variance[iter] = var(view(ℓobjective, :, iter))
+    ℓobjective_variance[iter] = Statistics.var(view(ℓobjective, :, iter))
     while iter < itermax
         iter += 1
     ## Compute variance and mean of ℓobjective estimate

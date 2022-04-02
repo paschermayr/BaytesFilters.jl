@@ -64,6 +64,7 @@ function transition!(
 )
     return transition!(_rng, particles.kernel, particles.val, tune.iter.current)
 end
+#=
 function ℓtransition!(
     ℓcontainer::Vector{F},
     particles::Particles,
@@ -83,7 +84,7 @@ function ℓevidence!(
 ) where {F<:AbstractFloat,D}
     return ℓevidence!(ℓcontainer, dataₜ, particles.kernel, particles.val, tune.iter.current)
 end
-
+=#
 function weight!(dataₜ::D, particles::Particles, tune::ParticleFilterTune) where {D}
     return weight!(
         tune.weighting,

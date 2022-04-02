@@ -72,7 +72,7 @@ using UnPack: UnPack, @unpack, @pack!
 using Random: Random, AbstractRNG, GLOBAL_RNG
 using Distributions: Distributions, logpdf, Categorical
 using ElasticArrays: ElasticArrays, ElasticMatrix
-using Statistics: Statistics, mean
+using Statistics: Statistics, mean, var
 
 ############################################################################################
 # Import sub-folder
