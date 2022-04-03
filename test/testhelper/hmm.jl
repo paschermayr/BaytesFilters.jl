@@ -14,6 +14,19 @@ struct HMM <: ModelName end
 hmm = ModelWrapper(HMM(), markov_param)
 markov_objective = Objective(hmm, markov_data, :latent)
 
+function ModelWrappers.generate(_rng::Random.AbstractRNG, objective::Objective{<:ModelWrapper{HMM}})
+    @unpack model, data = objective
+    @unpack μ, σ, latent = model.val
+    return rand(_rng, Normal(Float32(2.), Float32(3.)))
+end
+
+function ModelWrappers.predict(_rng::Random.AbstractRNG, objective::Objective{<:ModelWrapper{HMM}})
+    @unpack model, data = objective
+    @unpack μ, σ, latent = model.val
+    #NOTE: Check if correct prediction is applied even if standard predict is overloaded
+	return Int(3) #rand(_rng, Normal(μ[latent[end]], σ[latent[end]]))
+end
+
 function get_dynamics(model::ModelWrapper{<:HMM}, θ)
     @unpack μ, σ, p = θ
     dynamicsᵉ = [Normal(μ[iter], σ[iter]) for iter in eachindex(μ)]

@@ -88,3 +88,4 @@ include("HigherOrderMarkov.jl")
 resamplemethods = [Systematic(), Residual(), Stratified(), BaytesFilters.Multinomial()]
 referencemethods = [Conditional(), Ancestral(), Marginal()]
 objectives = [deepcopy(markov_objective), deepcopy(markov_MV_objective), deepcopy(semimarkov_objective)]
+generating = [UpdateFalse(), UpdateTrue()]

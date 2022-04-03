@@ -1,51 +1,56 @@
 ############################################################################################
 # Proposal steps and post processing
+#iter=1
 #_resample = resamplemethods[1]
 #_reference = referencemethods[1]
+#generated = generating[2]
 for iter in eachindex(objectives)
     @testset "Kernel construction and propose, all models" begin
         ## Resampling methods
         for _resample in resamplemethods
             ## Referencing methods
             for _reference in referencemethods
-                _obj = deepcopy(objectives[iter])
-                ## Define PF default tuning parameter
-                pfdefault = ParticleFilterDefault(;
-                    referencing = _reference,
-                    resampling = _resample
-                )
-                ## Check if Default options work
-                ParticleFilter(_rng, _obj, pfdefault)
-                ParticleFilter(_rng, _obj, pfdefault, SampleDefault())
-                ## Check if we can initiate from Constructor
-                constructor = ParticleFilterConstructor(:latent, pfdefault)
-                constructor(_rng, _obj.model, _obj.data, 1., SampleDefault())
-                ParticleFilter(:latent)
-                ## Initialize kernel and check if it can be run
-                pfkernel = ParticleFilter(
-                    _rng,
-                    _obj,
-                    pfdefault
-                )
-                _val, _diag = propose(_rng, pfkernel, _obj)
-                @test size(pfkernel.particles.val, 2) == length(_obj.data)
-                ## Check if all particles are correct ~ Easy to check for Semi-Markov particles
-                if _obj.model.id isa HSMM
-                    @test check_correctness(pfkernel.particles.kernel, pfkernel.particles.val) == 0
+                for generated in generating
+                    _obj = deepcopy(objectives[iter])
+                    ## Define PF default tuning parameter
+                    pfdefault = ParticleFilterDefault(;
+                        referencing = _reference,
+                        resampling = _resample,
+                        generated = generated
+                    )
+                    ## Check if Default options work
+                    ParticleFilter(_rng, _obj, pfdefault)
+                    ParticleFilter(_rng, _obj, pfdefault, SampleDefault())
+                    ## Check if we can initiate from Constructor
+                    constructor = ParticleFilterConstructor(:latent, pfdefault)
+                    constructor(_rng, _obj.model, _obj.data, 1., SampleDefault())
+                    ParticleFilter(:latent)
+                    ## Initialize kernel and check if it can be run
+                    pfkernel = ParticleFilter(
+                        _rng,
+                        _obj,
+                        pfdefault
+                    )
+                    _val, _diag = propose(_rng, pfkernel, _obj)
+                    @test size(pfkernel.particles.val, 2) == length(_obj.data)
+                    ## Check if all particles are correct ~ Easy to check for Semi-Markov particles
+                    if _obj.model.id isa HSMM
+                        @test check_correctness(pfkernel.particles.kernel, pfkernel.particles.val) == 0
+                    end
+                    ## Check if all ancestors are correct
+                    @test check_ancestors(pfkernel.particles.ancestor)
+                    ## Postprocessing
+                    BaytesFilters.generate_showvalues(_diag)()
+                    _type = infer(_rng, BaytesFilters.AbstractDiagnostics, pfkernel, _obj.model, _obj.data)
+                    @test _diag isa _type
+                    _type = infer(_rng, pfkernel.tune, pfkernel.particles.kernel, _obj.model, _obj.data)
+                    @test _diag.base.prediction isa _type
+                    _type = infer(_rng, pfkernel, _obj.model, _obj.data)
+                    @test _diag.base.prediction isa _type
+                    _type = BaytesFilters.infer_generated(_rng, pfkernel, _obj.model, _obj.data)
+                    @test _diag.generated isa _type
+                    @test predict(_rng, pfkernel, _obj) isa typeof(_diag.base.prediction)
                 end
-                ## Check if all ancestors are correct
-                @test check_ancestors(pfkernel.particles.ancestor)
-                ## Postprocessing
-                BaytesFilters.generate_showvalues(_diag)()
-                _type = infer(_rng, BaytesFilters.AbstractDiagnostics, pfkernel, _obj.model, _obj.data)
-                @test _diag isa _type
-                _type = infer(_rng, pfkernel.tune, pfkernel.particles.kernel, _obj.model, _obj.data)
-                @test _diag.base.prediction isa _type
-                _type = infer(_rng, pfkernel, _obj.model, _obj.data)
-                @test _diag.base.prediction isa _type
-                _type = BaytesFilters.infer_generated(_rng, pfkernel, _obj.model, _obj.data)
-                @test _diag.generated isa _type
-                @test predict(_rng, pfkernel, _obj) isa typeof(_diag.base.prediction)
             end
         end
     end
