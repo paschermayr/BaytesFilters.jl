@@ -160,6 +160,16 @@ function propose(
     path = BaytesCore.draw!(_rng, pf.particles.weights)
     prediction = predict(_rng, pf.particles, pf.tune, reference, path)
     pf.particles.buffer.prediction[1] = prediction
+    ## Update model parameter with reference trajectory
+    ModelWrappers.fill!(
+        objective.model,
+        objective.tagged,
+        #!NOTE: Create new Array with current iteration length to keep same type as in Model
+        BaytesCore.to_NamedTuple(
+            keys(objective.tagged.parameter),
+            pf.particles.val[path, 1:(pf.tune.iter.current - 1)],
+        ),
+    )
     ## Create Diagnostics and return output
     diagnostics = ParticleFilterDiagnostics(
         BaytesCore.BaseDiagnostics(
@@ -172,16 +182,6 @@ function propose(
         pf.tune.chains.Nchains,
         mean(pf.particles.buffer.resampled),
         ModelWrappers.generate(_rng, objective, pf.tune.generated)
-    )
-    ## Update model parameter with reference trajectory
-    ModelWrappers.fill!(
-        objective.model,
-        objective.tagged,
-        #!NOTE: Create new Array with current iteration length to keep same type as in Model
-        BaytesCore.to_NamedTuple(
-            keys(objective.tagged.parameter),
-            pf.particles.val[path, 1:(pf.tune.iter.current - 1)],
-        ),
     )
     ## Return new model parameter and diagnostics
     return objective.model.val, diagnostics
