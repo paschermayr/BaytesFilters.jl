@@ -18,7 +18,8 @@ struct ParticleFilterConstructor{
     function ParticleFilterConstructor(
         sym::S, default::D
     ) where {S<:Union{Symbol,NTuple{k,Symbol} where k},D<:ParticleFilterDefault}
-        return new{S,D}(sym, default)
+        tup = BaytesCore.to_Tuple(sym)
+        return new{typeof(tup),D}(tup, default)
     end
 end
 function (constructor::ParticleFilterConstructor)(

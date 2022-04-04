@@ -55,7 +55,8 @@ using BaytesCore:
     randcat,
     ChainsTune,
     ParameterBuffer,
-    SampleDefault
+    SampleDefault,
+    to_Tuple
 
 import ModelWrappers: ModelWrappers, predict, dynamics
 using ModelWrappers:

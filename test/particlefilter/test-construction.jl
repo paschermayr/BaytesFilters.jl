@@ -1,9 +1,11 @@
 ############################################################################################
 # Proposal steps and post processing
-#iter=1
-#_resample = resamplemethods[1]
-#_reference = referencemethods[1]
-#generated = generating[2]
+#=
+iter=1
+_resample = resamplemethods[1]
+_reference = referencemethods[1]
+generated = generating[2]
+=#
 for iter in eachindex(objectives)
     @testset "Kernel construction and propose, all models" begin
         ## Resampling methods
@@ -24,7 +26,7 @@ for iter in eachindex(objectives)
                     ## Check if we can initiate from Constructor
                     constructor = ParticleFilterConstructor(:latent, pfdefault)
                     constructor(_rng, _obj.model, _obj.data, 1., SampleDefault())
-                    ParticleFilter(:latent)
+                    ParticleFilter((:latent,))
                     ## Initialize kernel and check if it can be run
                     pfkernel = ParticleFilter(
                         _rng,
