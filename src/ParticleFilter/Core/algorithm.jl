@@ -202,7 +202,7 @@ function propose!(
     pf::ParticleFilter,
     model::ModelWrapper,
     data::D,
-    temperature::T = model.info.flattendefault.output(1.0),
+    temperature::T = model.info.reconstruct.default.output(1.0),
     update::U=BaytesCore.UpdateTrue(),
 ) where {D, T<:AbstractFloat, U<:BaytesCore.UpdateBool}
     ## Update PF parameter
@@ -247,7 +247,7 @@ function propagate!(
     pf::ParticleFilter,
     model::ModelWrapper,
     data::D,
-    temperature::T = 1.0
+    temperature::T = model.info.reconstruct.default.output(1.0)
 ) where {D, T<:AbstractFloat}
     ## Check if pf and data fulfill requirements for particle propagation
     ArgCheck.@argcheck isa(pf.tune.referencing, Marginal) "PF propagation only allowed for marginal particle filter"
