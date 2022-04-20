@@ -64,27 +64,7 @@ function transition!(
 )
     return transition!(_rng, particles.kernel, particles.val, tune.iter.current)
 end
-#=
-function ℓtransition!(
-    ℓcontainer::Vector{F},
-    particles::Particles,
-    tune::ParticleFilterTune,
-    reference::AbstractArray{P},
-) where {F<:AbstractFloat,P}
-    return ℓtransition!(
-        ℓcontainer,
-        BaytesCore.grab(reference, tune.iter.current, tune.config.particle),
-        particles.kernel,
-        particles.val,
-        tune.iter.current,
-    )
-end
-function ℓevidence!(
-    ℓcontainer::Vector{F}, dataₜ::D, particles::Particles, tune::ParticleFilterTune
-) where {F<:AbstractFloat,D}
-    return ℓevidence!(ℓcontainer, dataₜ, particles.kernel, particles.val, tune.iter.current)
-end
-=#
+
 function weight!(dataₜ::D, particles::Particles, tune::ParticleFilterTune) where {D}
     return weight!(
         tune.weighting,
@@ -126,7 +106,7 @@ function shuffle_forward!(particles::Particles, tune::ParticleFilterTune)
         particles.buffer.parameter.val,
         particles.ancestor,
         particles.buffer.parameter.index,
-        tune.memory.latent,
+        max(tune.memory), #tune.memory.latent,
         tune.iter.current - 1,
     )
 end
@@ -135,11 +115,7 @@ function shuffle_backward!(particles::Particles, tune::ParticleFilterTune)
         particles.val, particles.buffer.parameter.val, particles.ancestor, particles.buffer.parameter.index
     )
 end
-#=
-function shuffle!(particles::Particles)
-    return shuffle!(particles.val, particles.buffer.parameter.val, particles.buffer.parameter.index)
-end
-=#
+
 ############################################################################################
 """
 $(SIGNATURES)
