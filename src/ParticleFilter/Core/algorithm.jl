@@ -311,6 +311,18 @@ function propagate!(
     ## Predict new state and observation
     prediction = predict(_rng, pf.particles, pf.tune, reference, path)
     pf.particles.buffer.prediction[1] = prediction
+
+    ## Update model parameter with reference trajectory
+    # NOTE: Updated NamedTuple needed so no pointer issues when storing in trace
+    ModelWrappers.fill!(
+        model,
+        pf.tune.tagged,
+        #!NOTE: Create new Array with current iteration length to keep same type as in Model
+        BaytesCore.to_NamedTuple(
+            keys(pf.tune.tagged.parameter),
+            pf.particles.val[path, 1:(pf.tune.iter.current - 1)],
+        ),
+    )
     ## Create Diagnostics and return output
     diagnostics = ParticleFilterDiagnostics(
         BaytesCore.BaseDiagnostics(
