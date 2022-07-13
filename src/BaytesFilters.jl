@@ -58,7 +58,15 @@ using BaytesCore:
     SampleDefault,
     to_Tuple
 
-import ModelWrappers: ModelWrappers, predict, dynamics
+import ModelWrappers:
+    ModelWrappers,
+    predict,
+    dynamics,
+    AbstractInitialization,
+    NoInitialization,
+    PriorInitialization,
+    OptimInitialization
+
 using ModelWrappers:
     ModelWrappers, ModelWrapper, Tagged, Objective, DiffObjective, ℓObjectiveResult, generate
 
@@ -101,6 +109,11 @@ export
 
     # ModelWrappers
     predict,
-    dynamics
+    dynamics,
+    AbstractInitialization,
+    NoInitialization,
+    PriorInitialization,
+    OptimInitialization
+
 
 end

@@ -13,6 +13,7 @@ struct ParticleFilterDefault{
     B<:BaytesCore.ResamplingMethod,
     C<:ParticleReferencing,
     T<:Integer,
+    I<:ModelWrappers.AbstractInitialization,
     U<:BaytesCore.UpdateBool
 }
     "Memory for particles and data."
@@ -29,8 +30,8 @@ struct ParticleFilterDefault{
     threshold::Float64
     "Type for ancestors indices"
     ancestortype::Type{T}
-    "Boolean if initial parameter are fixed or resampled."
-    TunedModel::Bool
+    "Method to obtain initial Modelparameter, see 'AbstractInitialization'."
+    init::I
     "Boolean if generate(_rng, objective) for corresponding model is stored in PF Diagnostics."
     generated::U
     function ParticleFilterDefault(;
@@ -41,7 +42,7 @@ struct ParticleFilterDefault{
         coverage=0.50,
         threshold=0.75,
         ancestortype::Type{T}=Int32,
-        TunedModel=true,
+        init=ModelWrappers.NoInitialization(),
         generated=BaytesCore.UpdateFalse()
     ) where {
         M<:Union{Nothing, ParticleFilterMemory},
@@ -52,7 +53,7 @@ struct ParticleFilterDefault{
     }
         ArgCheck.@argcheck 0.0 < coverage
         ArgCheck.@argcheck 0.0 <= threshold <= 1.0
-        return new{M,A,B,C,T,typeof(generated)}(
+        return new{M,A,B,C,T,typeof(init),typeof(generated)}(
             memory,
             weighting,
             resampling,
@@ -60,7 +61,7 @@ struct ParticleFilterDefault{
             coverage,
             threshold,
             ancestortype,
-            TunedModel,
+            init,
             generated
         )
     end
@@ -87,6 +88,57 @@ struct ParticleFilter{A<:Particles,B<:ParticleFilterTune} <: AbstractAlgorithm
     end
 end
 
+############################################################################################
+"""
+$(TYPEDEF)
+
+Contains information to obtain reference trajectory for sampling process.
+
+# Fields
+$(TYPEDFIELDS)
+"""
+struct InitialTrajectory{R<:Random.AbstractRNG, K<:ParticleKernel, C<:ParticleReferencing, M<:ParticleFilterMemory}
+    "RNG method to sample reference"
+    _rng::R
+    "Kernel for particle propagation"
+    kernel::K
+    "Referencing method"
+    referencing::C
+    "Memory for observed and latent data in PF."
+    memory::M
+    function InitialTrajectory(
+        _rng::R,
+        kernel::K,
+        referencing::C,
+        memory::M
+    ) where {R<:Random.AbstractRNG, K<:ParticleKernel, C<:ParticleReferencing, M<:ParticleFilterMemory}
+        return new{R,K,C,M}(_rng, kernel, referencing, memory)
+    end
+end
+
+############################################################################################
+function (initialization::NoInitialization)(kernel::Type{P}, objective::Objective, trajectory::InitialTrajectory) where {P<:ParticleFilter}
+    @unpack _rng, kernel, referencing, memory = trajectory
+    reference = get_reference(referencing, objective)
+    return reference
+end
+function (initialization::PriorInitialization)(kernel::Type{P}, objective::Objective, trajectory::InitialTrajectory) where {P<:ParticleFilter}
+    @unpack _rng, kernel, referencing, memory = trajectory
+    reference = propagate(_rng, kernel, memory, get_reference(referencing, objective))
+    # Update model parameter with reference trajectory
+    ModelWrappers.fill!(
+        objective.model,
+        objective.tagged,
+        #!NOTE: Create new Array with current iteration length to keep same type as in Model
+        BaytesCore.to_NamedTuple(
+            keys(objective.tagged.parameter),
+            reference,
+        ),
+    )
+    return reference
+end
+############################################################################################
+
 function ParticleFilter(
     _rng::Random.AbstractRNG,
     objective::Objective,
@@ -95,19 +147,17 @@ function ParticleFilter(
 )
     ## Checks before algorithm is initiated
     ArgCheck.@argcheck hasmethod(dynamics, Tuple{typeof(objective)}) "No Filter dynamics given your objective exists - assign dynamics(objective::Objective{MyModel})"
-    @unpack memory, weighting, resampling, referencing, coverage, threshold, ancestortype, TunedModel, generated = default
+    @unpack memory, weighting, resampling, referencing, coverage, threshold, ancestortype, generated = default
     @unpack model, data, tagged = objective
     ## Assign model dynamics
     kernel = ModelWrappers.dynamics(objective)
-    ## Initiate a valid reference given model.data and tagged.parameter
+    ## Initiate a valid reference given model.data and tagged.parameter so Memory can be estimated
     reference = get_reference(referencing, objective)
     ## Guess particle and data memory
     memory = memory isa ParticleFilterMemory ? memory : _guessmemory(_rng, kernel, reference)
     ArgCheck.@argcheck memory isa ParticleFilterMemory
-    ## Forward sample new reference if TunedModel == false
-    if !TunedModel
-        reference = propagate(_rng, kernel, memory, reference)
-    end
+    ## Assign initial parameter for tagged values
+    reference = default.init(ParticleFilter, objective, InitialTrajectory(_rng, kernel, referencing, memory))
     ## Assign tuning struct
     Ndata = maximum(size(data))
     Nparticles = Int64(floor(coverage * Ndata))
@@ -299,4 +349,4 @@ end
 
 ############################################################################################
 #export
-export ParticleFilter, ParticleFilterDefault, propose, propose!, propagate!
+export ParticleFilter, InitialTrajectory, ParticleFilterDefault, propose, propose!, propagate!
