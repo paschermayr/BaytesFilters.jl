@@ -68,7 +68,7 @@ import ModelWrappers:
     OptimInitialization
 
 using ModelWrappers:
-    ModelWrappers, ModelWrapper, Tagged, Objective, DiffObjective, ℓObjectiveResult, generate
+    ModelWrappers, ModelWrapper, Tagged, Objective, generate#, DiffObjective, ℓObjectiveResult
 
 import Base: max, push!, resize!
 import Random: Random, rand!

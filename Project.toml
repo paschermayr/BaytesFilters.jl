@@ -1,7 +1,7 @@
 name = "BaytesFilters"
 uuid = "26b78818-2f47-47c8-af4b-89b2c3dade3f"
 authors = ["Patrick Aschermayr <p.aschermayr@gmail.com>"]
-version = "0.1.21"
+version = "0.1.22"
 
 [deps]
 ArgCheck = "dce04be8-c92d-5529-be00-80e4d2c0e197"
@@ -17,7 +17,7 @@ UnPack = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
 [compat]
 julia = "^1.7"
 BaytesCore = "0.1"
-ModelWrappers = "0.2"
+ModelWrappers = "0.3"
 ArgCheck = "2"
 Distributions = "0.24, 0.25"
 DocStringExtensions = "0.8"
