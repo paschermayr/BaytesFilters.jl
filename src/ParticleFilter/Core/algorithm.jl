@@ -97,9 +97,7 @@ Contains information to obtain reference trajectory for sampling process.
 # Fields
 $(TYPEDFIELDS)
 """
-struct InitialTrajectory{R<:Random.AbstractRNG, K<:ParticleKernel, C<:ParticleReferencing, M<:ParticleFilterMemory}
-    "RNG method to sample reference"
-    _rng::R
+struct InitialTrajectory{K<:ParticleKernel, C<:ParticleReferencing, M<:ParticleFilterMemory}
     "Kernel for particle propagation"
     kernel::K
     "Referencing method"
@@ -107,23 +105,22 @@ struct InitialTrajectory{R<:Random.AbstractRNG, K<:ParticleKernel, C<:ParticleRe
     "Memory for observed and latent data in PF."
     memory::M
     function InitialTrajectory(
-        _rng::R,
         kernel::K,
         referencing::C,
         memory::M
-    ) where {R<:Random.AbstractRNG, K<:ParticleKernel, C<:ParticleReferencing, M<:ParticleFilterMemory}
-        return new{R,K,C,M}(_rng, kernel, referencing, memory)
+    ) where {K<:ParticleKernel, C<:ParticleReferencing, M<:ParticleFilterMemory}
+        return new{K,C,M}(kernel, referencing, memory)
     end
 end
 
 ############################################################################################
-function (initialization::NoInitialization)(kernel::Type{P}, objective::Objective, trajectory::InitialTrajectory) where {P<:ParticleFilter}
-    @unpack _rng, kernel, referencing, memory = trajectory
+function (initialization::NoInitialization)(_rng::Random.AbstractRNG, kernel::Type{P}, objective::Objective, trajectory::InitialTrajectory) where {P<:ParticleFilter}
+    @unpack kernel, referencing, memory = trajectory
     reference = get_reference(referencing, objective)
     return reference
 end
-function (initialization::PriorInitialization)(kernel::Type{P}, objective::Objective, trajectory::InitialTrajectory) where {P<:ParticleFilter}
-    @unpack _rng, kernel, referencing, memory = trajectory
+function (initialization::PriorInitialization)(_rng::Random.AbstractRNG, kernel::Type{P}, objective::Objective, trajectory::InitialTrajectory) where {P<:ParticleFilter}
+    @unpack kernel, referencing, memory = trajectory
     reference = propagate(_rng, kernel, memory, get_reference(referencing, objective))
     # Update model parameter with reference trajectory
     ModelWrappers.fill!(
@@ -157,7 +154,7 @@ function ParticleFilter(
     memory = memory isa ParticleFilterMemory ? memory : _guessmemory(_rng, kernel, reference)
     ArgCheck.@argcheck memory isa ParticleFilterMemory
     ## Assign initial parameter for tagged values
-    reference = default.init(ParticleFilter, objective, InitialTrajectory(_rng, kernel, referencing, memory))
+    reference = default.init(_rng, ParticleFilter, objective, InitialTrajectory(kernel, referencing, memory))
     ## Assign tuning struct
     Ndata = maximum(size(data))
     Nparticles = Int64(floor(coverage * Ndata))
