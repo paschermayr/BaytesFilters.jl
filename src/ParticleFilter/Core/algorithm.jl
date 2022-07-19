@@ -179,7 +179,9 @@ function ParticleFilter(
     particles = Particles(reference, prediction_buffer, kernel, ancestortype, Nparticles, Ndata)
     pf = ParticleFilter(particles, tune)
     ## If OptimInitialization, sample initial state trajectory for model
-    propose!(_rng, pf, objective.model, objective.data, objective.temperature)
+    if isa(default.init, ModelWrappers.OptimInitialization)
+        propose!(_rng, pf, objective.model, objective.data, objective.temperature)
+    end
     ## Return Particle filter
     return pf
 end
