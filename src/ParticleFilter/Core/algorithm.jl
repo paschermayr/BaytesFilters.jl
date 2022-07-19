@@ -114,11 +114,13 @@ struct InitialTrajectory{K<:ParticleKernel, C<:ParticleReferencing, M<:ParticleF
 end
 
 ############################################################################################
-function (initialization::NoInitialization)(_rng::Random.AbstractRNG, kernel::Type{P}, objective::Objective, trajectory::InitialTrajectory) where {P<:ParticleFilter}
+#!NOTE: No need for parametric type in initialization, can do this if we need specific optimization criterion
+function (initialization::Union{NoInitialization, OptimInitialization})(_rng::Random.AbstractRNG, kernel::Type{P}, objective::Objective, trajectory::InitialTrajectory) where {P<:ParticleFilter}
     @unpack kernel, referencing, memory = trajectory
     reference = get_reference(referencing, objective)
     return reference
 end
+
 function (initialization::PriorInitialization)(_rng::Random.AbstractRNG, kernel::Type{P}, objective::Objective, trajectory::InitialTrajectory) where {P<:ParticleFilter}
     @unpack kernel, referencing, memory = trajectory
     reference = propagate(_rng, kernel, memory, get_reference(referencing, objective))
@@ -175,8 +177,11 @@ function ParticleFilter(
     prediction_buffer = Vector{Tprediction}(undef, 1)
     ## Create Particles container
     particles = Particles(reference, prediction_buffer, kernel, ancestortype, Nparticles, Ndata)
+    pf = ParticleFilter(particles, tune)
+    ## If OptimInitialization, sample initial state trajectory for model
+    propose!(_rng, pf, objective.model, objective.data, objective.temperature)
     ## Return Particle filter
-    return ParticleFilter(particles, tune)
+    return pf
 end
 
 ############################################################################################
