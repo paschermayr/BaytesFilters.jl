@@ -129,7 +129,8 @@ function (initialization::PriorInitialization)(_rng::Random.AbstractRNG, kernel:
         #!NOTE: Create new Array with current iteration length to keep same type as in Model
         BaytesCore.to_NamedTuple(
             keys(objective.tagged.parameter),
-            reference,
+            #!NOTE Copy reference so no pointer issues in the sampling process
+            reference[begin:end],
         ),
     )
     return reference
