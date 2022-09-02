@@ -20,7 +20,7 @@ BaytesCore = "0.1"
 ModelWrappers = "0.3"
 ArgCheck = "2"
 Distributions = "0.24, 0.25"
-DocStringExtensions = "0.8"
+DocStringExtensions = "0.8, 0.9"
 ElasticArrays = "1.2"
 UnPack = "1"
 
