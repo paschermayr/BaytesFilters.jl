@@ -56,7 +56,8 @@ using BaytesCore:
     ChainsTune,
     ParameterBuffer,
     SampleDefault,
-    to_Tuple
+    to_Tuple,
+    ProposalTune
 
 import ModelWrappers:
     ModelWrappers,

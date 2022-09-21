@@ -33,15 +33,17 @@ function estimate_Nparticles(
     iter = 1
 ## Run first test for estimates
     for chain in Base.OneTo(Nchains)
-        _, diagnostics = propose!(_rng, algorithms[chain], models[chain], objective.data, objective.temperature, UpdateTrue())
+        proposaltune = BaytesCore.ProposalTune(objective.temperature)
+        _, diagnostics = propose!(_rng, algorithms[chain], models[chain], objective.data, proposaltune)
         ℓobjective[chain, iter] = diagnostics.base.ℓobjective
     end
     ℓobjective_variance[iter] = Statistics.var(view(ℓobjective, :, iter))
     while iter < itermax
+        proposaltune = BaytesCore.ProposalTune(objective.temperature)
         iter += 1
     ## Compute variance and mean of ℓobjective estimate
         Threads.@threads for chain in Base.OneTo(Nchains)
-            _, diagnostics = propose!(_rng, algorithms[chain], models[chain], objective.data, objective.temperature, UpdateTrue())
+            _, diagnostics = propose!(_rng, algorithms[chain], models[chain], objective.data, proposaltune)
             ℓobjective[chain, iter] = diagnostics.base.ℓobjective
         end
         ℓobjective_variance[iter] = var(view(ℓobjective, :, iter))

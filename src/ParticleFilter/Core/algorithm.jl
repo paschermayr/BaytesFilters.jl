@@ -257,9 +257,12 @@ function propose!(
     pf::ParticleFilter,
     model::ModelWrapper,
     data::D,
-    temperature::T = model.info.reconstruct.default.output(1.0),
-    update::U=BaytesCore.UpdateTrue(),
-) where {D, T<:AbstractFloat, U<:BaytesCore.UpdateBool}
+    proposaltune::T = BaytesCore.ProposalTune(model.info.reconstruct.default.output(1.0))
+#    temperature::T = model.info.reconstruct.default.output(1.0),
+#    update::U=BaytesCore.UpdateTrue(),
+) where {D, T<:ProposalTune}
+    ## Update Proposal tuning information that is shared among algorithms
+    @unpack temperature, update = proposaltune
     ## Update PF parameter
     objective = Objective(model, data, pf.tune.tagged, temperature)
     ## Collect reference
@@ -302,8 +305,11 @@ function propagate!(
     pf::ParticleFilter,
     model::ModelWrapper,
     data::D,
-    temperature::T = model.info.reconstruct.default.output(1.0),
-) where {P, D, T<:AbstractFloat}
+    proposaltune::T = BaytesCore.ProposalTune(model.info.reconstruct.default.output(1.0))
+#    temperature::T = model.info.reconstruct.default.output(1.0),
+) where {D, T<:ProposalTune}
+    ## Update Proposal tuning information that is shared among algorithms
+    @unpack temperature = proposaltune
     ## Check if pf and data fulfill requirements for particle propagation
     ArgCheck.@argcheck isa(pf.tune.referencing, Marginal) "PF propagation only allowed for marginal particle filter"
     ## Assign new dynamics in case particles dependent on data
