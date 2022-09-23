@@ -279,7 +279,9 @@ function initial!(
         ## Calculate particle weights and log likelihood
         @inbounds if t > tune.memory.data #maxmemory
             weight!(BaytesCore.grab(objective.data, t, tune.config.data), particles, tune)
-            update!(particles.ℓobjective, logmeanexp(particles.weights.ℓweights))
+            ℓobjectiveₜ = logmeanexp(particles.weights.ℓweights)
+            particles.buffer.ℓobjectiveᵥ[t] = ℓobjectiveₜ
+            update!(particles.ℓobjective, ℓobjectiveₜ)
         end
         #!NOTE: No Resample step at init! for particle ancestors ~ first resampling should happen in propagate!() before particle propagation starts
         ## Update current iteration
@@ -325,7 +327,9 @@ function propagate!(
                 particles,
                 tune,
             )
-            update!(particles.ℓobjective, logmeanexp(particles.weights.ℓweights))
+            ℓobjectiveₜ = logmeanexp(particles.weights.ℓweights)
+            particles.buffer.ℓobjectiveᵥ[t] = ℓobjectiveₜ
+            update!(particles.ℓobjective, ℓobjectiveₜ)
         end
         ## Update current iteration to Ndata+1 for propagation step
         update!(tune.iter)
