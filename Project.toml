@@ -1,7 +1,7 @@
 name = "BaytesFilters"
 uuid = "26b78818-2f47-47c8-af4b-89b2c3dade3f"
 authors = ["Patrick Aschermayr <p.aschermayr@gmail.com>"]
-version = "0.2.7"
+version = "0.2.8"
 
 [deps]
 ArgCheck = "dce04be8-c92d-5529-be00-80e4d2c0e197"

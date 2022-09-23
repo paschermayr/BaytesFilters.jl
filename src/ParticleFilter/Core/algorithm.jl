@@ -236,7 +236,8 @@ function propose(
         pf.particles.ℓobjective.current,
         pf.tune.chains.Nchains,
         mean(pf.particles.buffer.resampled),
-        ModelWrappers.generate(_rng, objective, pf.tune.generated)
+        ModelWrappers.generate(_rng, objective, pf.tune.generated),
+        BaytesFilters.generate(_rng, pf, objective, pf.tune.generated)
     )
     ## Return new model parameter and diagnostics
     return objective.model.val, diagnostics
@@ -353,7 +354,8 @@ function propagate!(
         pf.particles.ℓobjective.current,
         pf.tune.chains.Nchains,
         mean(pf.particles.buffer.resampled),
-        ModelWrappers.generate(_rng, objective, pf.tune.generated)
+        ModelWrappers.generate(_rng, objective, pf.tune.generated),
+        BaytesFilters.generate(_rng, pf, objective, pf.tune.generated)
     )
     return model.val, diagnostics
 end

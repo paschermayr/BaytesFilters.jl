@@ -49,8 +49,9 @@ for iter in eachindex(objectives)
                     @test _diag.base.prediction isa _type
                     _type = infer(_rng, pfkernel, _obj.model, _obj.data)
                     @test _diag.base.prediction isa _type
-                    _type = BaytesFilters.infer_generated(_rng, pfkernel, _obj.model, _obj.data)
+                    _type, _type2 = BaytesFilters.infer_generated(_rng, pfkernel, _obj.model, _obj.data)
                     @test _diag.generated isa _type
+                    @test _diag.generated_algorithm isa _type2
                     @test predict(_rng, pfkernel, _obj) isa typeof(_diag.base.prediction)
                 end
             end

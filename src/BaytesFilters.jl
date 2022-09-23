@@ -18,6 +18,7 @@ import BaytesCore:
     result!,
     get_result,
     generate_showvalues,
+    generate,
     ParameterWeighting,
     ResamplingMethod,
     resample!,
@@ -69,7 +70,7 @@ import ModelWrappers:
     OptimInitialization
 
 using ModelWrappers:
-    ModelWrappers, ModelWrapper, Tagged, Objective, generate#, DiffObjective, ℓObjectiveResult
+    ModelWrappers, ModelWrapper, Tagged, Objective#, DiffObjective, ℓObjectiveResult
 
 import Base: max, push!, resize!
 import Random: Random, rand!
@@ -106,7 +107,8 @@ export
     shuffle!,
     shuffle_forward!,
     shuffle_backward!,
-    SampleDefault
+    SampleDefault,
+    generate,
 
     # ModelWrappers
     predict,

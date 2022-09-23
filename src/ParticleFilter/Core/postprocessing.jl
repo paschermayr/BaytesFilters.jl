@@ -59,8 +59,8 @@ function infer(
 ) where {D}
     #TTemperature = model.info.flattendefault.output
     TPrediction = infer(_rng, pf, model, data)
-    TGenerated = infer_generated(_rng, pf, model, data)
-    return ParticleFilterDiagnostics{TPrediction, TGenerated}
+    TGenerated, TGenerated_algorithm = infer_generated(_rng, pf, model, data)
+    return ParticleFilterDiagnostics{TPrediction, TGenerated, TGenerated_algorithm}
 end
 
 """
@@ -104,9 +104,32 @@ function infer_generated(
     _rng::Random.AbstractRNG, pf::ParticleFilter, model::ModelWrapper, data::D
 ) where {D}
     objective = Objective(model, data, pf.tune.tagged)
-    return typeof(generate(_rng, objective, pf.tune.generated))
+    TGenerated = typeof(generate(_rng, objective, pf.tune.generated))
+    TGenerated_algorithm = typeof(generate(_rng, pf, objective, pf.tune.generated))
+    return TGenerated, TGenerated_algorithm
 end
 
+############################################################################################
+"""
+$(SIGNATURES)
+Generate statistics for algorithm given model parameter and data.
+
+# Examples
+```julia
+```
+
+"""
+function generate(_rng::Random.AbstractRNG, algorithm::ParticleFilter, objective::Objective)
+    return nothing
+end
+function generate(_rng::Random.AbstractRNG, algorithm::ParticleFilter, objective::Objective, gen::BaytesCore.UpdateTrue)
+    return generate(_rng, algorithm, objective)
+end
+function generate(_rng::Random.AbstractRNG, algorithm::ParticleFilter, objective::Objective, gen::BaytesCore.UpdateFalse)
+    return nothing
+end
+
+############################################################################################
 """
 $(SIGNATURES)
 Return summary statistics for PF diagnostics.
