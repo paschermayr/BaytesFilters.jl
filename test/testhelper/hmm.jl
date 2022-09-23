@@ -19,6 +19,11 @@ function ModelWrappers.generate(_rng::Random.AbstractRNG, objective::Objective{<
     @unpack μ, σ, latent = model.val
     return rand(_rng, Normal(Float32(2.), Float32(3.)))
 end
+function ModelWrappers.generate(_rng::Random.AbstractRNG, pf::ParticleFilter, objective::Objective{<:ModelWrapper{HMM}})
+    @unpack model, data = objective
+    @unpack μ, σ, latent = model.val
+    return pf.particles.buffer.ℓobjectiveᵥ
+end
 
 function ModelWrappers.predict(_rng::Random.AbstractRNG, objective::Objective{<:ModelWrapper{HMM}})
     @unpack model, data = objective

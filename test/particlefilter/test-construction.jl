@@ -34,6 +34,7 @@ for iter in eachindex(objectives)
                         pfdefault
                     )
                     _val, _diag = propose(_rng, pfkernel, _obj)
+                    @test _diag.base.ℓobjective ≈ sum(pfkernel.particles.buffer.ℓobjectiveᵥ)
                     @test size(pfkernel.particles.val, 2) == length(_obj.data)
                     ## Check if all particles are correct ~ Easy to check for Semi-Markov particles
                     if _obj.model.id isa HSMM
