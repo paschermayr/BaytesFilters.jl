@@ -35,7 +35,6 @@ Calculate log transtion probability from particle given particle history.
 
 """
 function ℓtransition(
-    _rng::Random.AbstractRNG,
     kernel::ParticleKernel,
     valₜ::Union{P,AbstractVector{P}},
     val::AbstractMatrix{P},
@@ -96,14 +95,14 @@ Inplace calculate log transtion probability from current particle given trajecto
 
 """
 function ℓtransition!(
+    kernel::ParticleKernel,
     ℓcontainer::Vector{F},
     valₜ::Union{P,AbstractArray{P}},
-    kernel::ParticleKernel,
     val::AbstractMatrix{P},
     iter::Integer,
 ) where {F<:AbstractFloat,P}
     @inbounds for idx in Base.OneTo(size(val, 1))
-        ℓcontainer[idx] = ℓtransition(valₜ, kernel, view(val, idx, :), iter)
+        ℓcontainer[idx] = ℓtransition(kernel, valₜ, view(val, idx, :), iter)
     end
     return ℓcontainer
 end
@@ -120,7 +119,7 @@ Evaluate data given particle trajectory.
 
 """
 function ℓevidence(
-    dataₜ::D, kernel::ParticleKernel, val::AbstractVector{P}, iter::Integer
+    kernel::ParticleKernel, dataₜ::D, val::AbstractVector{P}, iter::Integer
 ) where {D,P}
     return logpdf(kernel.evidence(val, iter), dataₜ)
 end
@@ -135,15 +134,15 @@ Inplace logpdf evaluation of data given current particle trajectory.
 
 """
 function ℓevidence!(
+    kernel::ParticleKernel,
     ℓcontainer::Vector{F},
     dataₜ::D,
-    kernel::ParticleKernel,
     val::AbstractMatrix{P},
     iter::Integer,
 ) where {F<:AbstractFloat,D,P}
     @inbounds for idx in Base.OneTo(size(val, 1))
         #!NOTE: Need to evaluate e_t ~ s_1:t, e_1:t-1
-        ℓcontainer[idx] = ℓevidence(dataₜ, kernel, view(val, idx, :), iter)
+        ℓcontainer[idx] = ℓevidence(kernel, dataₜ, view(val, idx, :), iter)
     end
     return ℓcontainer
 end

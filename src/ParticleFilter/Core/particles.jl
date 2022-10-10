@@ -7,7 +7,7 @@ Contains Particle container for propagation.
 # Fields
 $(TYPEDFIELDS)
 """
-mutable struct Particles{R,P<:ParticleKernel,B,I<:Integer} <: AbstractParticles
+mutable struct Particles{R,B,I<:Integer} <: AbstractParticles
     "Particle trajectories, for a discussion about possible shapes for the trajectories."
     #=
     Field that hold Nparticles Ndata times, CRITERIA:
@@ -27,8 +27,8 @@ mutable struct Particles{R,P<:ParticleKernel,B,I<:Integer} <: AbstractParticles
     val::ElasticMatrix{B,Vector{B}}
     "Saved ancestors of resampling step in pf"
     ancestor::ElasticMatrix{I,Vector{I}}
-    "Distributions to propagate particle forward."
-    kernel::P
+#    "Distributions to propagate particle forward."
+#    kernel::P
     "Particle weights."
     weights::BaytesCore.ParameterWeights
     "Necessary buffer values for resampling particles."
@@ -38,11 +38,11 @@ mutable struct Particles{R,P<:ParticleKernel,B,I<:Integer} <: AbstractParticles
     function Particles(
         reference::AbstractArray{T},
         prediction::Vector{R},
-        kernel::P,
+#        kernel::P,
         ancestortype::Type{I},
         Nparticles::Integer,
         Ndata::Integer
-    ) where {T,R,P<:ParticleKernel,I<:Integer}
+    ) where {T,R,I<:Integer}
         ## Create val
         val = ElasticMatrix{T}(undef, Nparticles, Ndata)
         ## Create ancestors - switch Nparticles, Ndata for easier access in resampling step
@@ -52,25 +52,25 @@ mutable struct Particles{R,P<:ParticleKernel,B,I<:Integer} <: AbstractParticles
         ## Create buffer
         buffer = ParticleBuffer(prediction, reference, Nparticles, Ndata, ancestortype)
         ## Return Particles
-        return new{R,P,T,I}(val, ancestor, kernel, weights, buffer, Accumulator())
+        return new{R,T,I}(val, ancestor, weights, buffer, Accumulator())
     end
 end
 
-function initial!(_rng::Random.AbstractRNG, particles::Particles, tune::ParticleFilterTune)
-    return initial!(_rng, particles.kernel, particles.val, tune.iter.current)
+function initial!(_rng::Random.AbstractRNG, kernel::ParticleKernel, particles::Particles, tune::ParticleFilterTune)
+    return initial!(_rng, kernel, particles.val, tune.iter.current)
 end
 function transition!(
-    _rng::Random.AbstractRNG, particles::Particles, tune::ParticleFilterTune
+    _rng::Random.AbstractRNG, kernel::ParticleKernel, particles::Particles, tune::ParticleFilterTune
 )
-    return transition!(_rng, particles.kernel, particles.val, tune.iter.current)
+    return transition!(_rng, kernel, particles.val, tune.iter.current)
 end
 
-function weight!(dataₜ::D, particles::Particles, tune::ParticleFilterTune) where {D}
+function weight!(kernel::ParticleKernel, dataₜ::D, particles::Particles, tune::ParticleFilterTune) where {D}
     return weight!(
         tune.weighting,
+        kernel,
         particles.weights,
         dataₜ,
-        particles.kernel,
         particles.val,
         tune.iter.current,
     )
@@ -128,11 +128,10 @@ Resize particles struct with new `Nparticles` and `Ndata` size.
 """
 function resize!(
     particles::Particles,
-    kernel::P,
     reference::AbstractArray{T},
     Nparticles::Integer,
     Ndata::Integer,
-) where {T,P<:ParticleKernel}
+) where {T}
     ## Change val
     particles.val = ElasticMatrix{T}(undef, Nparticles, Ndata)
     ## Change ancestor size
@@ -160,15 +159,12 @@ function update!(
     particles::Particles,
     ParticleUpdate::BaytesCore.UpdateFalse,
     DataUpdate::BaytesCore.UpdateFalse,
-    kernel::P,
     reference::AbstractArray{T},
     Nparticles::Integer,
     Ndata::Integer,
-) where {T,P<:ParticleKernel}
+) where {T}
     ## Set loglikelihood counter back to 0
     init!(particles.ℓobjective)
-    ## Update kernel
-    particles.kernel = kernel
     ## Return
     return nothing
 end
@@ -176,17 +172,14 @@ function update!(
     particles::Particles,
     ParticleUpdate::BaytesCore.UpdateTrue,
     DataUpdate::D,
-    kernel::P,
     reference::AbstractArray{T},
     Nparticles::Integer,
     Ndata::Integer,
-) where {D<:BaytesCore.UpdateBool,T,P<:ParticleKernel}
+) where {D<:BaytesCore.UpdateBool,T}
     ## Set loglikelihood counter back to 0
     init!(particles.ℓobjective)
-    ## Update kernel
-    particles.kernel = kernel
     ## Resize Particles with new Nparticles and Ndata
-    resize!(particles, kernel, reference, Nparticles, Ndata)
+    resize!(particles, reference, Nparticles, Ndata)
     ## Return
     return nothing
 end
@@ -194,15 +187,12 @@ function update!(
     particles::Particles,
     ParticleUpdate::BaytesCore.UpdateFalse,
     DataUpdate::BaytesCore.UpdateTrue,
-    kernel::P,
     reference::AbstractArray{T},
     Nparticles::Integer,
     Ndata::Integer,
-) where {T,P<:ParticleKernel}
+) where {T}
     ## Set loglikelihood counter back to 0
     init!(particles.ℓobjective)
-    ## Update kernel
-    particles.kernel = kernel
     ## Resize val and ancestor size
     resize!(particles.val, Nparticles, Ndata)
     resize!(particles.ancestor, Nparticles, Ndata)
@@ -224,6 +214,7 @@ Resample particle ancestors and shuffle current particles dependency.
 """
 function resample!(
     _rng::Random.AbstractRNG,
+    kernel::ParticleKernel,
     particles::Particles,
     tune::ParticleFilterTune,
     reference::AbstractArray{P},
@@ -235,7 +226,7 @@ function resample!(
         ## Resample ancestors
         ancestors!(_rng, particles, tune)
         ## Compute new reference ancestor
-        get_reference!(_rng, particles, tune, reference)
+        get_reference!(_rng, kernel, particles, tune, reference)
         ## Set resampled == true in corresponding iteration -> happens at start of iteration, so iter-1 for resampled particles
         particles.buffer.resampled[tune.iter.current - 1] = true
         ## Equal weight normalized weights for next iteration memory
@@ -265,6 +256,7 @@ Initialize particles.
 """
 function initial!(
     _rng::AbstractRNG,
+    kernel::ParticleKernel,
     particles::Particles,
     tune::ParticleFilterTune,
     reference::AbstractArray{P},
@@ -273,12 +265,12 @@ function initial!(
     ## Start iterating over initial distributions of particles ~ depends on memory of particles, usually 1
     for t in 1:tune.memory.initial #max(1, tune.memory.latent)
         ## Sample from initial distribution
-        initial!(_rng, particles, tune)
+        initial!(_rng, kernel, particles, tune)
         ## Update Last particle value based on Particle Filter settings (Marginal/Conditiona/Ancestral)
         set_reference!(particles, tune, reference)
         ## Calculate particle weights and log likelihood
         @inbounds if t > tune.memory.data #maxmemory
-            weight!(BaytesCore.grab(objective.data, t, tune.config.data), particles, tune)
+            weight!(kernel, BaytesCore.grab(objective.data, t, tune.config.data), particles, tune)
             ℓobjectiveₜ = logmeanexp(particles.weights.ℓweights)
             particles.buffer.ℓobjectiveᵥ[t] = ℓobjectiveₜ
             update!(particles.ℓobjective, ℓobjectiveₜ)
@@ -306,6 +298,7 @@ Propagate particles forward.
 """
 function propagate!(
     _rng::AbstractRNG,
+    kernel::ParticleKernel,
     particles::Particles,
     tune::ParticleFilterTune,
     reference::AbstractArray{P},
@@ -314,15 +307,16 @@ function propagate!(
     #!NOTE: Ndata a bit more flexible than size(reference, 1), as one could only propagate a few iterations even if more samples are known.
     for t in (tune.iter.current):(tune.chains.Ndata)
         ## Resample particle ancestors if resampling criterion fullfiled
-        resample!(_rng, particles, tune, reference)
+        resample!(_rng, kernel, particles, tune, reference)
         ## Transition particles
-        transition!(_rng, particles, tune)
+        transition!(_rng, kernel, particles, tune)
         ## Update Last particle value based on Particle Filter settings (Marginal/Conditiona/Ancestral)
         set_reference!(particles, tune, reference)
         ## Calculate particle weights and log likelihood
         #!NOTE: cannot do this at the same time if particles are resampled adaptively, as normalized weights will change if not resampled
         @inbounds if t > tune.memory.data #maxmemory
             weight!(
+                kernel,
                 BaytesCore.grab(objective.data, tune.iter.current, tune.config.data),
                 particles,
                 tune,
@@ -355,8 +349,8 @@ Predict new latent and observed data.
 
 function predict(
     _rng::Random.AbstractRNG,
-    trajectory::AbstractArray{P},
     kernel::ParticleKernel,
+    trajectory::AbstractArray{P},
     reference::AbstractArray{P},
     iter::Integer,
 ) where {P}
@@ -370,6 +364,7 @@ function predict(
 end
 function predict(
     _rng,
+    kernel::ParticleKernel,
     particles::Particles,
     tune::ParticleFilterTune,
     reference::AbstractArray{P},
@@ -377,8 +372,8 @@ function predict(
 ) where {P}
     return predict(
         _rng,
+        kernel,
         assign!(particles.buffer.proposal, view(particles.val, path, :)),
-        particles.kernel,
         reference,
         tune.iter.current,
     )

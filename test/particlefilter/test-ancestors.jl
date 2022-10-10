@@ -35,9 +35,10 @@ end
 ############################################################################################
 # run PF and check if correct state trajectories
 semimarkov_pf = ParticleFilter(_rng, semimarkov_objective)
-_vals, _diag = propose(_rng, semimarkov_pf, semimarkov_objective)
+_kernel = ModelWrappers.dynamics(semimarkov_objective)
+_vals, _diag = propose(_rng, _kernel, semimarkov_pf, semimarkov_objective)
 
 @testset "PF - Ancestors - SemiMarkov" begin
-    @test check_correctness(semimarkov_pf.particles.kernel, semimarkov_pf.particles.val) ==
+    @test check_correctness(_kernel, semimarkov_pf.particles.val) ==
           0
 end

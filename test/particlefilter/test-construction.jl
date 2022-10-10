@@ -33,12 +33,13 @@ for iter in eachindex(objectives)
                         _obj,
                         pfdefault
                     )
-                    _val, _diag = propose(_rng, pfkernel, _obj)
+                    _kernel = ModelWrappers.dynamics(_obj)
+                    _val, _diag = propose(_rng, _kernel, pfkernel, _obj)
                     @test _diag.base.ℓobjective ≈ sum(pfkernel.particles.buffer.ℓobjectiveᵥ)
                     @test size(pfkernel.particles.val, 2) == length(_obj.data)
                     ## Check if all particles are correct ~ Easy to check for Semi-Markov particles
                     if _obj.model.id isa HSMM
-                        @test check_correctness(pfkernel.particles.kernel, pfkernel.particles.val) == 0
+                        @test check_correctness(_kernel, pfkernel.particles.val) == 0
                     end
                     ## Check if all ancestors are correct
                     @test check_ancestors(pfkernel.particles.ancestor)
@@ -46,14 +47,14 @@ for iter in eachindex(objectives)
                     BaytesFilters.generate_showvalues(_diag)()
                     _type = infer(_rng, BaytesFilters.AbstractDiagnostics, pfkernel, _obj.model, _obj.data)
                     @test _diag isa _type
-                    _type = infer(_rng, pfkernel.tune, pfkernel.particles.kernel, _obj.model, _obj.data)
+                    _type = infer(_rng, _kernel, pfkernel.tune, _obj.model, _obj.data)
                     @test _diag.base.prediction isa _type
                     _type = infer(_rng, pfkernel, _obj.model, _obj.data)
                     @test _diag.base.prediction isa _type
                     _type, _type2 = BaytesFilters.infer_generated(_rng, pfkernel, _obj.model, _obj.data)
                     @test _diag.generated isa _type
                     @test _diag.generated_algorithm isa _type2
-                    @test predict(_rng, pfkernel, _obj) isa typeof(_diag.base.prediction)
+                    @test predict(_rng, _kernel, pfkernel, _obj) isa typeof(_diag.base.prediction)
                 end
             end
         end
@@ -87,7 +88,7 @@ for iter in eachindex(objectives)
                     _obj,
                     pfdefault
                 )
-                propose(_rng, pfkernel, _obj)
+                propose(_rng, ModelWrappers.dynamics(_obj), pfkernel, _obj)
                 ## Propagate forward
                 propagate!(_rng, pfkernel, _obj.model, data2)
                 @test size(pfkernel.particles.val, 2) == length(data2)

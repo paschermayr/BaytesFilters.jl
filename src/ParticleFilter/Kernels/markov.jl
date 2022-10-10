@@ -32,7 +32,7 @@ end
 
 ############################################################################################
 function ℓtransition(
-    valₜ::Union{P,AbstractArray{P}}, kernel::Markov, val::AbstractArray{P}, iter::Integer
+    kernel::Markov, valₜ::Union{P,AbstractArray{P}}, val::AbstractArray{P}, iter::Integer
 ) where {P}
     return logpdf(kernel.transition(val, iter), valₜ)
 end

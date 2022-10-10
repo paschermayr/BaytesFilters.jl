@@ -173,10 +173,10 @@ function ParticleFilter(
         Iterator(1),
     )
     ## Prediction buffer
-    Tprediction = infer(_rng, tune, kernel, model, data)
+    Tprediction = infer(_rng, kernel, tune, model, data)
     prediction_buffer = Vector{Tprediction}(undef, 1)
     ## Create Particles container
-    particles = Particles(reference, prediction_buffer, kernel, ancestortype, Nparticles, Ndata)
+    particles = Particles(reference, prediction_buffer, ancestortype, Nparticles, Ndata)
     pf = ParticleFilter(particles, tune)
     ## If OptimInitialization, sample initial state trajectory for model
     if isa(default.init, ModelWrappers.OptimInitialization)
@@ -198,6 +198,7 @@ Run particle filter and do not change reference trajectory.
 """
 function propose(
     _rng::Random.AbstractRNG,
+    kernel::ParticleKernel,
     pf::ParticleFilter,
     objective::Objective,
     reference::AbstractArray{P}=get_reference(pf.tune.referencing, objective),
@@ -206,14 +207,14 @@ function propose(
     init!(pf.particles.ℓobjective)
     init!(pf.tune.iter, 1)
     ## Initialize particles
-    initial!(_rng, pf.particles, pf.tune, reference, objective)
+    initial!(_rng, kernel, pf.particles, pf.tune, reference, objective)
     ## Propagate particles forward
-    propagate!(_rng, pf.particles, pf.tune, reference, objective)
+    propagate!(_rng, kernel, pf.particles, pf.tune, reference, objective)
     ## Sort all particles back into correct order
     BaytesCore.shuffle_backward!(pf.particles, pf.tune)
     ## Draw proposal path, update proposal with corresponding path and predict future state
     path = BaytesCore.draw!(_rng, pf.particles.weights)
-    prediction = predict(_rng, pf.particles, pf.tune, reference, path)
+    prediction = predict(_rng, kernel, pf.particles, pf.tune, reference, path)
     pf.particles.buffer.prediction[1] = prediction
     ## Update model parameter with reference trajectory
     ModelWrappers.fill!(
@@ -268,6 +269,8 @@ function propose!(
     objective = Objective(model, data, pf.tune.tagged, temperature)
     ## Collect reference
     reference = get_reference(pf.tune.referencing, objective)
+    ## Update dynamics
+    kernel = ModelWrappers.dynamics(objective)
     ## Check if Ndata and Nparticles have to be adjusted
     if update isa BaytesCore.UpdateTrue
         ## Check if number of particles need to be updated
@@ -277,14 +280,13 @@ function propose!(
             pf.particles,
             update_Nparticles,
             update_Ndata,
-            dynamics(objective),
             reference,
             pf.tune.chains.Nchains,
             Ndata,
         )
     end
     ## Propagate particles forward
-    val, diagnostics = propose(_rng, pf, objective, reference)
+    val, diagnostics = propose(_rng, kernel, pf, objective, reference)
     ## Update ModelWrapper parameter with reference trajectory
     model.val = val
     ## Return diagnostics
@@ -307,7 +309,6 @@ function propagate!(
     model::ModelWrapper,
     data::D,
     proposaltune::T = BaytesCore.ProposalTune(model.info.reconstruct.default.output(1.0))
-#    temperature::T = model.info.reconstruct.default.output(1.0),
 ) where {D, T<:ProposalTune}
     ## Update Proposal tuning information that is shared among algorithms
     @unpack temperature = proposaltune
@@ -315,7 +316,7 @@ function propagate!(
     ArgCheck.@argcheck isa(pf.tune.referencing, Marginal) "PF propagation only allowed for marginal particle filter"
     ## Assign new dynamics in case particles dependent on data
     objective = Objective(model, data, pf.tune.tagged, temperature)
-    pf.particles.kernel = ModelWrappers.dynamics(objective)
+    kernel = ModelWrappers.dynamics(objective)
     ## Collect reference trajectory
     reference = get_reference(pf.tune.referencing, objective)
     # Check if reference no larger than data dimension
@@ -326,12 +327,12 @@ function propagate!(
     resize!(pf.particles.ancestor, pf.tune.chains.Nchains, pf.tune.chains.Ndata)
     update!(pf.particles.buffer, pf.tune.chains.Nchains, pf.tune.chains.Ndata)
     ## Propagate particles forward
-    propagate!(_rng, pf.particles, pf.tune, reference, objective)
+    propagate!(_rng, kernel, pf.particles, pf.tune, reference, objective)
     ## Sort all particles back into correct order
     BaytesCore.shuffle_backward!(pf.particles, pf.tune)
     ## Draw proposal path, update proposal with corresponding path and predict future state
     path = BaytesCore.draw!(_rng, pf.particles.weights)
-    prediction = predict(_rng, pf.particles, pf.tune, reference, path)
+    prediction = predict(_rng, kernel, pf.particles, pf.tune, reference, path)
     pf.particles.buffer.prediction[1] = prediction
     ## Update model parameter with reference trajectory
     ModelWrappers.fill!(

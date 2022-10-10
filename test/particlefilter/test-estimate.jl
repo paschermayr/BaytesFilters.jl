@@ -23,12 +23,12 @@ for iter in eachindex(objectives)
                 _obj,
                 pfdefault
             )
-            _val, _diag = propose(_rng, pfkernel, _obj)
+            _val, _diag = propose(_rng, ModelWrappers.dynamics(_obj), pfkernel, _obj)
             ## Check Marginal PF likelihood
             _type = infer(_rng, BaytesFilters.AbstractDiagnostics, pfkernel, _obj.model, _obj.data)
             diags = Vector{_type}(undef, 50)
             for idx in eachindex(diags)
-                _, diags[idx] = propose(_rng, pfkernel, _obj)
+                _, diags[idx] = propose(_rng, ModelWrappers.dynamics(_obj), pfkernel, _obj)
             end
             ℓobjective_approx = [diags[idx].base.ℓobjective for idx in eachindex(diags)]
             _, ℓobjective_exact = filter_forward(_obj)

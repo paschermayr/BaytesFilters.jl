@@ -78,8 +78,8 @@ function transition(
 end
 ############################################################################################
 function ℓtransition(
-    valₜ::Union{P,AbstractArray{P}},
     kernel::SemiMarkov,
+    valₜ::Union{P,AbstractArray{P}},
     val::AbstractArray{P},
     iter::Integer,
 ) where {P}

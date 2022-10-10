@@ -38,15 +38,15 @@ Inplace calculate ancestor weights.
 
 """
 function ancestralweight!(
+    kernel::ParticleKernel,
     weights::BaytesCore.ParameterWeights,
     valₜ::Union{P,AbstractArray{P}},
-    kernel::ParticleKernel,
     val::AbstractArray,
     iter::Integer,
 ) where {P}
     #!NOTE: buffer first overwritten in ℓtransition! and then assigned again on LHS
     weights.buffer .=
-        weights.ℓweights .+ ℓtransition!(weights.buffer, valₜ, kernel, val, iter)
+        weights.ℓweights .+ ℓtransition!(kernel, weights.buffer, valₜ, val, iter)
     weights.buffer .-= logsumexp(weights.buffer)
     return nothing
 end
@@ -63,14 +63,14 @@ Sample ancestor reference for particle history.
 """
 function sample_ancestor(
     _rng::Random.AbstractRNG,
+    kernel::ParticleKernel,
     weights::BaytesCore.ParameterWeights,
     valₜ::Union{P,AbstractArray{P}},
-    kernel::ParticleKernel,
     val::AbstractArray,
     iter::Integer,
 ) where {P}
     #!NOTE: buffer will be first overwritten on right side to inplace calculate new weights, and then assigned inplace on left side
-    ancestralweight!(weights, valₜ, kernel, val, iter)
+    ancestralweight!(kernel, weights, valₜ, val, iter)
     #!NOTE Need to exp() particles.weights.buffer due to ancestralweights! calculation in log space
     weights.buffer .= exp.(weights.buffer)
     return BaytesCore.randcat(_rng, weights.buffer)
@@ -151,6 +151,7 @@ Compute new reference index from current reference index.
 """
 function get_reference!(
     _rng::Random.AbstractRNG,
+    kernel::ParticleKernel,
     referencing::Marginal,
     ancestor::AbstractVector{I},
     particles::F,
@@ -162,6 +163,7 @@ end
 
 function get_reference!(
     _rng::Random.AbstractRNG,
+    kernel::ParticleKernel,
     referencing::Conditional,
     ancestor::AbstractVector{I},
     particles::F,
@@ -174,6 +176,7 @@ end
 
 function get_reference!(
     _rng::Random.AbstractRNG,
+    kernel::ParticleKernel,
     referencing::Ancestral,
     ancestor::AbstractVector{I},
     particles::F,
@@ -184,9 +187,9 @@ function get_reference!(
     #!NOTE: Weights.buffer already exp.(weightsₙ) during BaytesCore.issmaller( BaytesCore.computeESS(particles.weights), X) in previous step
     ancestor[end] = sample_ancestor(
         _rng,
+        kernel,
         particles.weights,
         referenceₜ,
-        particles.kernel,
         particles.val,
         tune.iter.current
     )
@@ -196,6 +199,7 @@ end
 #!NOTE: If buffer is a matrix, reference will be assigned at iter-1 within function, but input here is iter as we grab data for forward looking ancestral step.
 function get_reference!(
     _rng::Random.AbstractRNG,
+    kernel::ParticleKernel,
     referencing::R,
     ancestor::AbstractMatrix{I},
     particles::F,
@@ -204,6 +208,7 @@ function get_reference!(
 ) where {R<:ParticleReferencing, I<:Integer, F<:AbstractParticles, P}
     return get_reference!(
         _rng,
+        kernel,
         referencing,
         view(ancestor, :, tune.iter.current - 1),
         particles,
@@ -213,11 +218,12 @@ function get_reference!(
 end
 function get_reference!(
     _rng::Random.AbstractRNG,
+    kernel::ParticleKernel,
     particles::F,
     tune::ParticleFilterTune,
     reference::Union{P,AbstractArray{P}}
 ) where {F<:AbstractParticles, P}
-    return get_reference!(_rng, tune.referencing, particles.ancestor, particles, tune, reference)
+    return get_reference!(_rng, kernel, tune.referencing, particles.ancestor, particles, tune, reference)
 end
 
 ############################################################################################
