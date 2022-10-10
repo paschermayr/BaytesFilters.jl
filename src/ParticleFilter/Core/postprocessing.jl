@@ -194,7 +194,8 @@ function predict(_rng::Random.AbstractRNG, kernel::ParticleKernel, pf::ParticleF
     return predict(_rng, kernel, pf.particles, pf.tune, reference, path)
 end
 function predict(_rng::Random.AbstractRNG, pf::ParticleFilter, objective::Objective)
-    return predict(_rng, ModelWrappers.dynamics(objective), pf, objective)
+    obj = Objective(objective.model, objective.data, pf.tune.tagged, objective.temperature)
+    return predict(_rng, ModelWrappers.dynamics(obj), pf, obj)
 end
 
 ############################################################################################
