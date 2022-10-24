@@ -26,12 +26,12 @@ function (constructor::ParticleFilterConstructor)(
     _rng::Random.AbstractRNG,
     model::ModelWrapper,
     data::D,
-    temperature::F,
+    proposaltune::P,
     info::BaytesCore.SampleDefault
-) where {D, F<:AbstractFloat}
+) where {D, P<:BaytesCore.ProposalTune}
     return ParticleFilter(
         _rng,
-        Objective(model, data, Tagged(model, constructor.sym), temperature),
+        Objective(model, data, Tagged(model, constructor.sym), proposaltune.temperature),
         constructor.default,
         info
     )

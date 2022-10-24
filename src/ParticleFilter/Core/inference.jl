@@ -23,7 +23,7 @@ function estimate_Nparticles(
     ArgCheck.@argcheck margin > 0
     ArgCheck.@argcheck itermax > 0
 ## Assign all kernels
-    algorithms = map(iter -> pf(_rng, objective.model, objective.data, objective.temperature, SampleDefault()), Base.OneTo(Nchains))
+    algorithms = map(iter -> pf(_rng, objective.model, objective.data, BaytesCore.ProposalTune(objective.temperature), SampleDefault()), Base.OneTo(Nchains))
     models = map(iter -> deepcopy(objective.model), Base.OneTo(Nchains))
 ## Preallocate buffer for variance and mean of ℓobjective estimate
     ℓobjective_variance = zeros(itermax)

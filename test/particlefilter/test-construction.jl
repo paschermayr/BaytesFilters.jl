@@ -25,7 +25,7 @@ for iter in eachindex(objectives)
                     ParticleFilter(_rng, _obj, pfdefault, SampleDefault())
                     ## Check if we can initiate from Constructor
                     constructor = ParticleFilterConstructor(:latent, pfdefault)
-                    constructor(_rng, _obj.model, _obj.data, 1., SampleDefault())
+                    constructor(_rng, _obj.model, _obj.data, BaytesCore.ProposalTune(1.), SampleDefault())
                     ParticleFilter((:latent,))
                     ## Initialize kernel and check if it can be run
                     pfkernel = ParticleFilter(
