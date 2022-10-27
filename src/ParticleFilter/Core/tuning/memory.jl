@@ -43,7 +43,7 @@ function propagate(
     trajectory = Vector{P}(undef, size(reference, 1))
     Ninitial = memory.initial #max(1, memory.latent)
     ## Initialize particle
-    for iter in 1:Ninitial
+    for iter in Base.OneTo(Ninitial)
         trajectory[iter] = initial(_rng, kernel)
     end
     ## Propoagate particle forward

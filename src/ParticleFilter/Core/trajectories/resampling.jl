@@ -26,7 +26,7 @@ function resample!(
     @inbounds v = n * weights[1]
     u = oftype(v, rand(_rng))
     sample = 1
-    @inbounds for i in 1:n
+    @inbounds for i in Base.OneTo(n)
         # as long as we have not found the next sample
         while v < u
             # increase and check the sample
@@ -59,7 +59,7 @@ function resample!(
     # pre-calculations
     @inbounds v = n * weights[1]
     sample = 1
-    @inbounds for i in 1:n
+    @inbounds for i in Base.OneTo(n)
         # sample next `u` (scaled by `n`)
         u = oftype(v, i - 1 + rand(_rng))
         # as long as we have not found the next sample
@@ -89,10 +89,10 @@ function resample!(
     # deterministic assignment
     residuals = similar(weights)
     i = 1
-    @inbounds for j in 1:length(weights)
+    @inbounds for j in eachindex(weights)
         x = n * weights[j]
         floor_x = floor(Int, x)
-        for k in 1:floor_x
+        for k in eachindex(floor_x)
             container[i] = j
             i += 1
         end
