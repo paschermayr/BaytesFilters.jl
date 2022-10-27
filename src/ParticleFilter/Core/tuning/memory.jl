@@ -52,6 +52,33 @@ function propagate(
     end
     return trajectory
 end
+############################################################################################
+"""
+$(SIGNATURES)
+Propagate forward a single trajectory given ParticleKernel and objective for multiple time steps.
+
+# Examples
+```julia
+```
+
+"""
+function propagate!(_rng, objective::Objective, length_forecast::Integer)
+    #Set dynamics
+    kernel = dynamics(objective)
+    # Compute initial length of tagged parameter
+    param = getfield(objective.model.val, keys(objective.tagged.parameter)[1])
+    length_latent = length(param)
+    # Increase vector by length_forecast
+    resize!(param, length_latent + length_forecast)
+    for iter in Base.OneTo(length_forecast)
+        model_idx = length_latent+iter
+        param[model_idx] = transition(
+            _rng, kernel, param, model_idx
+        )
+    end
+    # Return copy of predictions
+    return param[length_latent+1:end]
+end
 
 ############################################################################################
 """
