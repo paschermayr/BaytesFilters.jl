@@ -3,11 +3,11 @@
 HO_latent = randn(_rng, N)
 HO_data = randn(_rng, size(HO_latent, 1))
 HO_param = (
-    μ₀=Param(0.0, Normal(0.0, 10.0)),
-    μ=Param(-0.50, Normal(0.0, 10.0)),
-    σ=Param(0.250, Gamma(0.5, 1.0)),
-    ϕ=Param(0.90, Uniform(-1.0, 1.0)),
-    latent=Param(HO_latent, [Normal(0.0, 10) for i in Base.OneTo(N)]),
+    μ₀=Param(Normal(0.0, 10.0), 0.0, ),
+    μ=Param(Normal(0.0, 10.0), -0.50, ),
+    σ=Param(Gamma(0.5, 1.0), 0.250, ),
+    ϕ=Param(Uniform(-1.0, 1.0), 0.90, ),
+    latent=Param([Normal(0.0, 10) for i in Base.OneTo(N)], HO_latent,),
 )
 struct Markov_HO <: ModelName end
 markov_HO = ModelWrapper(Markov_HO(), HO_param)

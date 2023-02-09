@@ -8,22 +8,22 @@ semimarkov_latent = convert(Vector{Tuple{Int32,Int16}}, semimarkov_latent)
 semimarkov_data = randn(_rng, size(semimarkov_latent, 1))
 semimarkov_param = (;
     μ=Param(
-        [-.2, 0.2],
         [truncated(Normal(-2.0, 5), -10.0, 0.0), truncated(Normal(2.0, 5), 0.0, 10.0)],
+        [-.2, 0.2],
     ),
     σ=Param(
-        [5.0, 2.0],
         [truncated(Normal(2.5, 10.0), 0.0, 10.0), truncated(Normal(5.0, 10.0), 0.0, 10.0)],
+        [5.0, 2.0],
     ),
     λ=Param(
-        [10.0, 50.0],
         [
             truncated(Normal(10.0, 100.0), 0.0, 100.0),
             truncated(Normal(20.0, 100.0), 0.0, 100.0),
         ],
+        [10.0, 50.0],
     ),
-    p=Param([[1], [1]], Fixed()),
-    latent=Param(semimarkov_latent, Fixed()),
+    p=Param(Fixed(), [[1], [1]], ),
+    latent=Param(Fixed(),semimarkov_latent, ),
 )
 struct HSMM <: ModelName end
 hsmm = ModelWrapper(HSMM(), semimarkov_param)

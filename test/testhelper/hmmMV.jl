@@ -2,12 +2,19 @@
 #Markov Kernel
 markov_MV_data = [randn(_rng, 2) for _ in 1:N]
 param_HMM_MV = (;
-    μ = Param([[-2., -2.], [0., 0.], [2., 2.]],
-        [MvNormal( [i, i], [1., 1.] ) for i in -1.0:1:1.]),
-    σ = Param([[ 2.2 0.2 ; 0.2 2.2], [ 1.1 0.1 ; 0.1 1.1], [ 2.2 0.2 ; 0.2 2.2] ],
-        [InverseWishart(10, [0.8 0.5 ; 0.5 .8] ) for i in 1:3]),
-    p = Param([[.6, .2, .2],  [.1, .1, .8], [.1, .1, .8]], [Dirichlet(3,3) for i in 1:3]),
-    latent = Param(markov_latent, Fixed()),
+    μ = Param(
+        [MvNormal( [i, i], [1., 1.] ) for i in -1.0:1:1.],
+        [[-2., -2.], [0., 0.], [2., 2.]],
+        ),
+    σ = Param(
+        [InverseWishart(10, [0.8 0.5 ; 0.5 .8] ) for i in 1:3],
+        [[ 2.2 0.2 ; 0.2 2.2], [ 1.1 0.1 ; 0.1 1.1], [ 2.2 0.2 ; 0.2 2.2] ],
+        ),
+    p = Param(
+    [Dirichlet(3,3) for i in 1:3],
+    [[.6, .2, .2],  [.1, .1, .8], [.1, .1, .8]],
+    ),
+    latent = Param(Fixed(), markov_latent, ),
 )
 struct HMM_MV <: ModelName end
 hmm_MV = ModelWrapper(HMM_MV(), param_HMM_MV)

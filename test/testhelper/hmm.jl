@@ -3,12 +3,13 @@
 markov_latent = Int32.(rand(_rng, Distributions.Categorical(3), N))
 markov_data = randn(_rng, Float16, size(markov_latent, 1))
 markov_param = (;
-    μ=Param([-.1, 0.0, 0.1], fill(Normal(0.0, 10), 3)),
-    σ=Param([5.0, 3.0, 2.0], fill(truncated(Normal(3.0, 10.0), 0.0, 10.0), 3)),
+    μ=Param(fill(Normal(0.0, 10), 3), [-.1, 0.0, 0.1], ),
+    σ=Param(fill(truncated(Normal(3.0, 10.0), 0.0, 10.0), 3), [5.0, 3.0, 2.0], ),
     p=Param(
-        [[0.2, 0.6, 0.2], [0.2, 0.6, 0.2], [0.2, 0.6, 0.2]], [Dirichlet(3, 3) for i in 1:3]
+        [Dirichlet(3, 3) for i in 1:3],
+        [[0.2, 0.6, 0.2], [0.2, 0.6, 0.2], [0.2, 0.6, 0.2]],
     ),
-    latent=Param(markov_latent, Fixed()),
+    latent=Param(Fixed(),markov_latent),
 )
 struct HMM <: ModelName end
 hmm = ModelWrapper(HMM(), markov_param)
