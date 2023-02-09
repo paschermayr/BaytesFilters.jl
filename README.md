@@ -33,10 +33,10 @@ data = [rand(_rng, Normal(μ[iter], σ[iter])) for iter in latent]
 # Create ModelWrapper struct, assuming we do not know latent
 latent_init = rand(_rng, Categorical(p), N)
 myparameter = (;
-    μ = Param(μ, [Normal(-2., 5), Normal(2., 5)]),
-    σ = Param(σ, [Gamma(2.,2.), Gamma(2.,2.)]),
-    p = Param(p, Dirichlet(2, 2)),
-    latent = Param(latent_init, [Categorical(p) for _ in Base.OneTo(N)]),
+    μ = Param([Normal(-2., 5), Normal(2., 5)], μ, ),
+    σ = Param([Gamma(2.,2.), Gamma(2.,2.)], σ, ),
+    p = Param(Dirichlet(2, 2), p, ),
+    latent = Param([Categorical(p) for _ in Base.OneTo(N)], latent_init, ),
 )
 mymodel = ModelWrapper(myparameter)
 myobjective = Objective(mymodel, data)
@@ -73,12 +73,13 @@ transition_data(particles, iter) = Normal(mean(@view(particles[iter-5:iter-1])),
 ## Estimating particle trajectories
 Let us now create a `ParticleFilter`, and estimate the latent trajectory given all other model parameter. Note that we can only target one parameter via a `ParticleFilter`, so we slightly adjust our objective to
 ```julia
+mydynamics = dynamics(myobjective)
 myobjective2 = Objective(mymodel, data, :latent)
-myfilter = ParticleFilter(myobjective2)
+myfilter = ParticleFilter(_rng, myobjective2)
 ```
 Proposal steps works exactly as in BaytesMCMC.jl, you can either use `propose(_rng, algorithm, objective)` or `propose!(_rng, algorithm, mode, data)` depending on the use case. You can check out the BaytesMCMC.jl if you need further clarification on the difference of these two functions. Let us run the filter to get a new estimate for the latent data sequence:
 ```julia
-_val, _diagnostics = propose(_rng, myfilter, myobjective2)
+_val, _diagnostics = propose(_rng, mydynamics, myfilter, myobjective2)
 
 using Plots
 plot(latent, label = "true")
@@ -102,7 +103,7 @@ function (objective::Objective{<:ModelWrapper{BaseModel}})(θ::NamedTuple)
 end
 
 # Compare 1 Filter run with analytical likelihood
-_diagnostics.ℓℒ #~-1633.01
+_diagnostics.base.ℓobjective #~-1633.01
 myobjective2(_val) #-1633.05
 ```
 There are more output statistics stored in the diagnostics struct, such as the number of resampling steps or a one-step-ahead prediction for the next latent and observed data point. If you want to do further inference on the likelihood estimate, you might want to run the filter several times to check the variance of this estimate.
@@ -118,7 +119,7 @@ pfdefault = ParticleFilterDefault(;
     coverage=0.50, #Coverage of Nparticles/Ndata.
     threshold=0.75, #ESS threshold for resampling particle trajectories.
 )
-myfilter = ParticleFilter(myobjective2, pfdefault)
+myfilter = ParticleFilter(_rng, myobjective2, pfdefault)
 ```
 
 There are a variety of methods for `ParticleFilterDefault` fields. For now, you have to check all options in the code base if you want to adjust the default arguments.
@@ -130,10 +131,10 @@ The particle filter implementation scales linearly in both the number of particl
 using BenchmarkTools
 pfdefault1 = ParticleFilterDefault(; coverage=0.5)
 pfdefault2 = ParticleFilterDefault(; coverage=1.0)
-myfilter1 = ParticleFilter(myobjective2, pfdefault1)
-myfilter2 = ParticleFilter(myobjective2, pfdefault2)
-@btime propose($_rng, $myfilter1, $myobjective2) #12.522 ms (8 allocations: 16.20 KiB)
-@btime propose($_rng, $myfilter2, $myobjective2) #25.992 ms (8 allocations: 16.20 KiB)
+myfilter1 = ParticleFilter(_rng, myobjective2, pfdefault1)
+myfilter2 = ParticleFilter(_rng, myobjective2, pfdefault2)
+@btime propose($_rng, $mydynamics, $myfilter1, $myobjective2) #12.522 ms (7 allocations: 16.20 KiB)
+@btime propose($_rng, $mydynamics, $myfilter2, $myobjective2) #25.992 ms (7 allocations: 16.20 KiB)
 ```
 Moreover, if your `dynamics(objective)` function is efficiently implemented, there should be only very few allocations during the proposal step.
 
