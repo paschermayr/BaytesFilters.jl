@@ -3,7 +3,7 @@
 using Test
 using Random: Random, AbstractRNG, seed!
 using ArgCheck: ArgCheck, @argcheck
-using UnPack: UnPack, @unpack
+using SimpleUnPack: SimpleUnPack, @unpack
 using Distributions
 
 ############################################################################################
