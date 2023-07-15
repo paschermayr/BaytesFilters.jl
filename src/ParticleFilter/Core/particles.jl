@@ -273,7 +273,7 @@ function initial!(
             ## If necessary, impute missing data
             dataₜ = BaytesCore.grab(objective.data, t, tune.config.data)
             if hasnan(dataₜ)
-                dataₜ = impute(dataₜ, kernel, particles, tune, reference, objective)
+                dataₜ = impute(dataₜ, t, kernel, particles, tune, reference, objective)
             end
             ## Weight data
             weight!(kernel, dataₜ, particles, tune)
@@ -324,7 +324,7 @@ function propagate!(
             ## If necessary, impute missing data
             dataₜ = BaytesCore.grab(objective.data, t, tune.config.data)
             if hasnan(dataₜ)
-                dataₜ = impute(dataₜ, kernel, particles, tune, reference, objective)
+                dataₜ = impute(dataₜ, t, kernel, particles, tune, reference, objective)
             end
             ## Weight data
             weight!(
@@ -443,6 +443,7 @@ Extendable function to work with missing data
 """
 function impute(
     data,
+    t::Integer, 
     kernel::ParticleKernel,
     particles::Particles,
     tune::ParticleFilterTune,
