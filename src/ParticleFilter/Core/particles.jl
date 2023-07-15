@@ -270,7 +270,13 @@ function initial!(
         set_reference!(particles, tune, reference)
         ## Calculate particle weights and log likelihood
         @inbounds if t > tune.memory.data #maxmemory
-            weight!(kernel, BaytesCore.grab(objective.data, t, tune.config.data), particles, tune)
+            ## If necessary, impute missing data
+            dataₜ = BaytesCore.grab(objective.data, t, tune.config.data)
+            if hasnan(dataₜ)
+                dataₜ = impute(dataₜ, kernel, particles, tune, reference, objective)
+            end
+            ## Weight data
+            weight!(kernel, dataₜ, particles, tune)
             ℓobjectiveₜ = logmeanexp(particles.weights.ℓweights)
             particles.buffer.ℓobjectiveᵥ[t] = ℓobjectiveₜ
             update!(particles.ℓobjective, ℓobjectiveₜ)
@@ -315,9 +321,15 @@ function propagate!(
         ## Calculate particle weights and log likelihood
         #!NOTE: cannot do this at the same time if particles are resampled adaptively, as normalized weights will change if not resampled
         @inbounds if t > tune.memory.data #maxmemory
+            ## If necessary, impute missing data
+            dataₜ = BaytesCore.grab(objective.data, t, tune.config.data)
+            if hasnan(dataₜ)
+                dataₜ = impute(dataₜ, kernel, particles, tune, reference, objective)
+            end
+            ## Weight data
             weight!(
                 kernel,
-                BaytesCore.grab(objective.data, tune.iter.current, tune.config.data),
+                dataₜ,
                 particles,
                 tune,
             )
@@ -346,7 +358,6 @@ Predict new latent and observed data.
 ```
 
 """
-
 function predict(
     _rng::Random.AbstractRNG,
     kernel::ParticleKernel,
@@ -399,5 +410,47 @@ function assign!(buffer::AbstractVector{P}, trajectory::AbstractVector{T}) where
 end
 
 ############################################################################################
+"""
+$(SIGNATURES)
+Check if a single value in 'val' has nan
+
+# Examples
+```julia
+```
+
+"""
+function hasnan(val::T) where {T<:Real}
+    return isnan(val)
+end
+function hasnan(val::AbstractVector{T}) where {T<:Real}
+    return any(isnan, val)
+end
+function hasnan(val::AbstractArray{T, 2}) where {T<:Real}
+    return any(isnan, val)
+end
+function hasnan(val::AbstractArray)
+    return any(hasnan, val)
+end
+
+"""
+$(SIGNATURES)
+Extendable function to work with missing data
+
+# Examples
+```julia
+```
+
+"""
+function impute(
+    data,
+    kernel::ParticleKernel,
+    particles::Particles,
+    tune::ParticleFilterTune,
+    reference::AbstractArray{P},
+    objective::Objective,
+) where {P}
+end
+
+############################################################################################
 #export
-export Particles, resample!, initial!, propagate!, predict
+export Particles, resample!, initial!, propagate!, impute, predict
