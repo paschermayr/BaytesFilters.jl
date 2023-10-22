@@ -90,24 +90,26 @@ end
 
 ############################################################################################
 """
-$(TYPEDEF)
+$(SIGNATURES)
+Setup dynamics for propose!() step.
 
-Setup dynamics for propose!() step
+# Examples
+```julia
+```
 
-# Fields
-$(TYPEDFIELDS)
 """
 function dynamics_propose(objective::Objective)
     return ModelWrappers.dynamics(objective)
 end
 
 """
-$(TYPEDEF)
-
+$(SIGNATURES)
 Setup dynamics for propagate!() step. By default, same as dynamics_propose, but can be extended if faster setup is available.
 
-# Fields
-$(TYPEDFIELDS)
+# Examples
+```julia
+```
+
 """
 function dynamics_propagate(objective::Objective)
     return dynamics_propose(objective)
@@ -162,8 +164,8 @@ function (initialization::PriorInitialization)(_rng::Random.AbstractRNG, kernel:
     )
     return reference
 end
-############################################################################################
 
+############################################################################################
 function ParticleFilter(
     _rng::Random.AbstractRNG,
     objective::Objective,
