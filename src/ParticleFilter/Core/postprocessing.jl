@@ -87,7 +87,7 @@ end
 function infer(
     _rng::Random.AbstractRNG, pf::ParticleFilter, model::ModelWrapper, data::D
 ) where {D}
-    kernel = ModelWrappers.dynamics(Objective(model, data, pf.tune.tagged))
+    kernel = dynamics_propose(Objective(model, data, pf.tune.tagged))
     return infer(_rng, kernel, pf.tune, model, data)
 end
 
@@ -195,7 +195,7 @@ function predict(_rng::Random.AbstractRNG, kernel::ParticleKernel, pf::ParticleF
 end
 function predict(_rng::Random.AbstractRNG, pf::ParticleFilter, objective::Objective)
     obj = Objective(objective.model, objective.data, pf.tune.tagged, objective.temperature)
-    return predict(_rng, ModelWrappers.dynamics(obj), pf, obj)
+    return predict(_rng, dynamics_propose(obj), pf, obj)
 end
 
 ############################################################################################

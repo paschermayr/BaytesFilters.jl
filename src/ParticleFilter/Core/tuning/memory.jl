@@ -64,7 +64,7 @@ Propagate forward a single trajectory given ParticleKernel and objective for mul
 """
 function propagate!(_rng, objective::Objective, length_forecast::Integer)
     #Set dynamics
-    kernel = dynamics(objective)
+    kernel = dynamics_propose(objective)
     # Compute initial length of tagged parameter
     param = getfield(objective.model.val, keys(objective.tagged.parameter)[1])
     length_latent = length(param)

@@ -92,6 +92,31 @@ end
 """
 $(TYPEDEF)
 
+Setup dynamics for propose!() step
+
+# Fields
+$(TYPEDFIELDS)
+"""
+function dynamics_propose(objective::Objective)
+    return ModelWrappers.dynamics(objective)
+end
+
+"""
+$(TYPEDEF)
+
+Setup dynamics for propagate!() step. By default, same as dynamics_propose, but can be extended if faster setup is available.
+
+# Fields
+$(TYPEDFIELDS)
+"""
+function dynamics_propagate(objective::Objective)
+    return dynamics_propose(objective)
+end
+
+############################################################################################
+"""
+$(TYPEDEF)
+
 Contains information to obtain reference trajectory for sampling process.
 
 # Fields
@@ -150,7 +175,7 @@ function ParticleFilter(
     @unpack memory, weighting, resampling, referencing, coverage, threshold, ancestortype, generated = default
     @unpack model, data, tagged = objective
     ## Assign model dynamics
-    kernel = ModelWrappers.dynamics(objective)
+    kernel = dynamics_propose(objective)
     ## Initiate a valid reference given model.data and tagged.parameter so Memory can be estimated
     reference = get_reference(referencing, objective)
     ## Guess particle and data memory
@@ -270,7 +295,7 @@ function propose!(
     ## Collect reference
     reference = get_reference(pf.tune.referencing, objective)
     ## Update dynamics
-    kernel = ModelWrappers.dynamics(objective)
+    kernel = dynamics_propose(objective)
     ## Check if Ndata and Nparticles have to be adjusted
     if update isa BaytesCore.UpdateTrue
         ## Check if number of particles need to be updated
@@ -316,7 +341,7 @@ function propagate!(
     ArgCheck.@argcheck isa(pf.tune.referencing, Marginal) "PF propagation only allowed for marginal particle filter"
     ## Assign new dynamics in case particles dependent on data
     objective = Objective(model, data, pf.tune.tagged, temperature)
-    kernel = ModelWrappers.dynamics(objective)
+    kernel = dynamics_propagate(objective)
     ## Collect reference trajectory
     reference = get_reference(pf.tune.referencing, objective)
     # Check if reference no larger than data dimension
@@ -363,4 +388,13 @@ end
 
 ############################################################################################
 #export
-export ParticleFilter, InitialTrajectory, ParticleFilterDefault, propose, propose!, propagate!
+export 
+    ParticleFilter, 
+    dynamics, 
+    dynamics_propose, 
+    dynamics_propagate, 
+    InitialTrajectory, 
+    ParticleFilterDefault, 
+    propose, 
+    propose!, 
+    propagate!
