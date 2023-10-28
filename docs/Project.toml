@@ -1,3 +1,6 @@
 [deps]
 BaytesFilters = "26b78818-2f47-47c8-af4b-89b2c3dade3f"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+
+[compat]
+Documenter = "1"
